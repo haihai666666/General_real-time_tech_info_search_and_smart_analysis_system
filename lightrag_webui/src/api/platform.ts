@@ -134,6 +134,30 @@ export const getCrawlStats = async (): Promise<CrawlStats> => {
   return res.data
 }
 
+// ============ Import API ============
+
+export const importSingleArticle = async (articleId: string): Promise<{
+  status: string
+  message: string
+  article_id: string
+  title?: string
+}> => {
+  const res = await platformApi.post(`/api/crawler/import/${articleId}`)
+  return res.data
+}
+
+export const importBatchArticles = async (articleIds: string[]): Promise<{
+  status: string
+  total: number
+  success: number
+  failed: number
+  skipped: number
+  results: any[]
+}> => {
+  const res = await platformApi.post('/api/crawler/import/batch', articleIds)
+  return res.data
+}
+
 // ============ Analysis API ============
 
 export const summarizeArticle = async (articleId: string): Promise<SummarizeResponse> => {

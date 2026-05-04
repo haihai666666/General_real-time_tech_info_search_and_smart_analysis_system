@@ -39,6 +39,9 @@ function TabsNavigation() {
   return (
     <div className="flex h-8 self-center">
       <TabsList className="h-full gap-2 bg-slate-950/35 border border-cyan-400/25 backdrop-blur-xl shadow-[0_0_24px_rgba(0,255,255,0.18)]">
+        <NavigationTab value="data-sources" currentTab={currentTab}>
+          {t('header.dataSources')}
+        </NavigationTab>
         <NavigationTab value="documents" currentTab={currentTab}>
           {t('header.documents')}
         </NavigationTab>
@@ -47,9 +50,6 @@ function TabsNavigation() {
         </NavigationTab>
         <NavigationTab value="retrieval" currentTab={currentTab}>
           {t('header.retrieval')}
-        </NavigationTab>
-        <NavigationTab value="data-sources" currentTab={currentTab}>
-          {t('header.dataSources')}
         </NavigationTab>
         <NavigationTab value="analysis" currentTab={currentTab}>
           {t('header.analysis')}

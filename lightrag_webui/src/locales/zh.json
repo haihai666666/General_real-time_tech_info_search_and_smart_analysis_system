@@ -476,7 +476,17 @@
     "searchPlaceholder": "搜索标题...",
     "allSources": "全部来源",
     "noArticles": "暂无文章。请先启动数据采集。",
-    "showing": "{{start}}-{{end}} / {{total}}"
+    "showing": "{{start}}-{{end}} / {{total}}",
+    "crawlFinished": "采集完成: {{spider}}",
+    "importToKG": "导入知识图谱",
+    "importSuccess": "已导入: {{title}}",
+    "noRawArticles": "没有待导入的文章",
+    "importAll": "全部导入 ({{count}})",
+    "importing": "导入中...",
+    "batchImportDone": "批量导入: {{success}} 成功, {{failed}} 失败 (共 {{total}} 篇)",
+    "allArticles": "全部",
+    "pendingArticles": "待导入",
+    "importedArticles": "已导入"
   },
   "analysis": {
     "trends": "趋势分析",

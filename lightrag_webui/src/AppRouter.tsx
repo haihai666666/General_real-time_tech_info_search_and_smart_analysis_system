@@ -68,10 +68,10 @@ const AppContent = () => {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/data-sources" element={isAuthenticated ? <App /> : null} />
       <Route path="/documents" element={isAuthenticated ? <App /> : null} />
       <Route path="/knowledge-graph" element={isAuthenticated ? <App /> : null} />
       <Route path="/retrieval" element={isAuthenticated ? <App /> : null} />
-      <Route path="/data-sources" element={isAuthenticated ? <App /> : null} />
       <Route path="/analysis" element={isAuthenticated ? <App /> : null} />
       <Route
         path="/*"

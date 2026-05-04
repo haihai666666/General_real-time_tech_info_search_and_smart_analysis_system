@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import {
-  getSpiders, triggerCrawl, getCrawlStats, getArticles, getCrawlLogs,
+  getSpiders, triggerCrawl, getCrawlStats, getArticles, getCrawlLogs, getCrawlStatus,
+  importSingleArticle, importBatchArticles,
   type SpiderInfo, type ArticleResponse, type CrawlStats, type CrawlLogEntry,
 } from '@/api/platform'
 import Button from '@/components/ui/Button'
@@ -12,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   DatabaseIcon, RefreshCwIcon, PlayIcon, SearchIcon, GlobeIcon,
   BookOpenIcon, NewspaperIcon, CpuIcon, ChevronLeftIcon, ChevronRightIcon,
-  LoaderIcon, AlertCircleIcon, CheckCircleIcon,
+  LoaderIcon, AlertCircleIcon, CheckCircleIcon, UploadIcon, PackageIcon,
 } from 'lucide-react'
 
 const sourceIcons: Record<string, React.ReactNode> = {
@@ -34,8 +35,12 @@ export default function DataSourceManager() {
   const pageSize = 15
   const [sourceFilter, setSourceFilter] = useState('')
   const [searchText, setSearchText] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'raw' | 'ingested'>('all')
   const [loading, setLoading] = useState(false)
   const [crawling, setCrawling] = useState<Record<string, boolean>>({})
+  const [importing, setImporting] = useState<Record<string, boolean>>({})
+  const [batchImporting, setBatchImporting] = useState(false)
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -55,28 +60,72 @@ export default function DataSourceManager() {
         page, page_size: pageSize,
         source: sourceFilter || undefined,
         search: searchText || undefined,
+        status: statusFilter === 'all' ? undefined : statusFilter,
       })
       setArticles(res.articles)
       setTotalArticles(res.total)
     } catch (err) { console.error('Load articles failed:', err) }
-  }, [page, pageSize, sourceFilter, searchText])
+  }, [page, pageSize, sourceFilter, searchText, statusFilter])
 
   useEffect(() => { loadData() }, [loadData])
   useEffect(() => { loadArticles() }, [loadArticles])
+  useEffect(() => { return () => { if (pollRef.current) clearInterval(pollRef.current) } }, [])
+
+  const startPolling = useCallback((spiderName: string) => {
+    if (pollRef.current) clearInterval(pollRef.current)
+    let ticks = 0
+    pollRef.current = setInterval(async () => {
+      ticks++
+      try {
+        const statusRes = await getCrawlStatus()
+        const running = Object.values(statusRes.tasks).some((t: any) => t.spider === spiderName && t.status === 'running')
+        await loadArticles(); await loadData()
+        if (!running || ticks > 60) {
+          if (pollRef.current) clearInterval(pollRef.current); pollRef.current = null
+          setCrawling(p => ({ ...p, [spiderName]: false }))
+          if (!running) toast.success(t('dataSource.crawlFinished', { spider: spiderName }))
+        }
+      } catch { /* keep polling */ }
+    }, 3000)
+  }, [loadArticles, loadData, t])
 
   const handleCrawl = async (name: string) => {
     setCrawling(p => ({ ...p, [name]: true }))
     try {
       await triggerCrawl(name, 20)
       toast.success(t('dataSource.crawlStarted', { spider: name }))
-      setTimeout(() => { loadData(); loadArticles(); setCrawling(p => ({ ...p, [name]: false })) }, 5000)
+      startPolling(name)
     } catch (err: any) {
       toast.error(err?.response?.data?.detail || err.message)
       setCrawling(p => ({ ...p, [name]: false }))
     }
   }
 
+  const handleImport = async (articleId: string) => {
+    setImporting(p => ({ ...p, [articleId]: true }))
+    try {
+      const res = await importSingleArticle(articleId)
+      if (res.status === 'success') { toast.success(t('dataSource.importSuccess', { title: (res.title || '').substring(0, 40) })); await loadArticles(); await loadData() }
+      else if (res.status === 'skipped') { toast.info(res.message) }
+      else { toast.error(res.message) }
+    } catch (err: any) { toast.error(err?.response?.data?.detail || err.message) }
+    finally { setImporting(p => ({ ...p, [articleId]: false })) }
+  }
+
+  const handleBatchImport = async () => {
+    const rawIds = articles.filter(a => a.status === 'raw').map(a => a.id)
+    if (rawIds.length === 0) { toast.info(t('dataSource.noRawArticles')); return }
+    setBatchImporting(true)
+    try {
+      const res = await importBatchArticles(rawIds)
+      toast.success(t('dataSource.batchImportDone', { success: res.success, failed: res.failed, total: res.total }))
+      await loadArticles(); await loadData()
+    } catch (err: any) { toast.error(err?.response?.data?.detail || err.message) }
+    finally { setBatchImporting(false) }
+  }
+
   const totalPages = Math.ceil(totalArticles / pageSize)
+  const rawCount = articles.filter(a => a.status === 'raw').length
 
   return (
     <div className="flex h-full flex-col gap-4 overflow-auto p-4">
@@ -145,7 +194,17 @@ export default function DataSourceManager() {
       {/* Articles */}
       <div className="flex-1 rounded-lg border border-cyan-400/20 bg-slate-900/60 p-4 backdrop-blur">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <h3 className="text-base font-semibold text-cyan-50">{t('dataSource.articles')}</h3>
+          <div className="flex items-center gap-3">
+            <h3 className="text-base font-semibold text-cyan-50">{t('dataSource.articles')}</h3>
+            {rawCount > 0 && statusFilter !== 'ingested' && (
+              <Button onClick={handleBatchImport} disabled={batchImporting}
+                className="h-7 bg-gradient-to-r from-emerald-600 to-cyan-600 px-3 text-[11px] text-white hover:from-emerald-500 hover:to-cyan-500 disabled:opacity-50">
+                {batchImporting
+                  ? <><LoaderIcon className="mr-1 size-3 animate-spin" />{t('dataSource.importing')}</>
+                  : <><PackageIcon className="mr-1 size-3" />{t('dataSource.importAll', { count: rawCount })}</>}
+              </Button>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <div className="relative">
               <SearchIcon className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
@@ -172,21 +231,56 @@ export default function DataSourceManager() {
           </div>
         </div>
 
+        {/* Status Filter Tabs */}
+        <div className="mb-3 flex gap-2">
+          <Button variant={statusFilter === 'all' ? 'default' : 'ghost'} size="sm"
+            onClick={() => { setStatusFilter('all'); setPage(1) }}
+            className={`h-7 text-xs ${statusFilter === 'all' ? 'bg-cyan-600 text-white' : 'text-slate-300'}`}>
+            {t('dataSource.allArticles')}
+          </Button>
+          <Button variant={statusFilter === 'raw' ? 'default' : 'ghost'} size="sm"
+            onClick={() => { setStatusFilter('raw'); setPage(1) }}
+            className={`h-7 text-xs ${statusFilter === 'raw' ? 'bg-yellow-600 text-white' : 'text-slate-300'}`}>
+            {t('dataSource.pendingArticles')}
+          </Button>
+          <Button variant={statusFilter === 'ingested' ? 'default' : 'ghost'} size="sm"
+            onClick={() => { setStatusFilter('ingested'); setPage(1) }}
+            className={`h-7 text-xs ${statusFilter === 'ingested' ? 'bg-emerald-600 text-white' : 'text-slate-300'}`}>
+            {t('dataSource.importedArticles')}
+          </Button>
+        </div>
+
         <div className="space-y-2">
           {articles.map(article => (
             <div key={article.id} className="rounded-lg border border-slate-700/30 bg-slate-800/30 p-3 transition-colors hover:border-cyan-400/30">
-              <a href={article.url} target="_blank" rel="noopener noreferrer"
-                className="text-sm font-medium text-cyan-100 hover:text-cyan-300 hover:underline">
-                {article.title}
-              </a>
-              {article.summary && <p className="mt-1 line-clamp-2 text-xs text-slate-400">{article.summary}</p>}
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <Badge variant="outline" className="border-slate-600/50 text-[10px] text-slate-300">{article.source}</Badge>
-                <Badge variant="outline" className="border-slate-600/50 text-[10px] text-slate-300">{article.status}</Badge>
-                {article.tags.slice(0, 3).map(tag => (
-                  <Badge key={tag} variant="outline" className="border-cyan-400/20 text-[10px] text-cyan-300/70">{tag}</Badge>
-                ))}
-                <span className="text-[10px] text-slate-500">{new Date(article.published_at).toLocaleDateString()}</span>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <a href={article.url} target="_blank" rel="noopener noreferrer"
+                    className="text-sm font-medium text-cyan-100 hover:text-cyan-300 hover:underline">{article.title}</a>
+                  {article.summary && <p className="mt-1 line-clamp-2 text-xs text-slate-400">{article.summary}</p>}
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <Badge variant="outline" className="border-slate-600/50 text-[10px] text-slate-300">{article.source}</Badge>
+                    <Badge variant="outline" className={`text-[10px] ${article.status === 'ingested' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30' : 'bg-yellow-500/20 text-yellow-300 border-yellow-400/30'}`}>
+                      {article.status === 'ingested' ? 'Imported' : 'Pending'}
+                    </Badge>
+                    {article.tags.slice(0, 3).map(tag => (
+                      <Badge key={tag} variant="outline" className="border-cyan-400/20 text-[10px] text-cyan-300/70">{tag}</Badge>
+                    ))}
+                    <span className="text-[10px] text-slate-500">{new Date(article.published_at).toLocaleDateString()}</span>
+                  </div>
+                </div>
+                <div className="shrink-0">
+                  {article.status === 'raw' ? (
+                    <Button variant="ghost" size="icon" onClick={() => handleImport(article.id)}
+                      disabled={importing[article.id]}
+                      className="size-8 text-emerald-400 hover:bg-emerald-500/15 disabled:opacity-50"
+                      tooltip={t('dataSource.importToKG')}>
+                      {importing[article.id] ? <LoaderIcon className="size-3.5 animate-spin" /> : <UploadIcon className="size-3.5" />}
+                    </Button>
+                  ) : article.status === 'ingested' ? (
+                    <div className="flex size-8 items-center justify-center"><CheckCircleIcon className="size-4 text-emerald-400" /></div>
+                  ) : null}
+                </div>
               </div>
             </div>
           ))}

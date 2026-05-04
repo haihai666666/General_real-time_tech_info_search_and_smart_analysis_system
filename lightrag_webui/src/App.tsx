@@ -20,7 +20,7 @@ import SmartAnalysis from '@/features/SmartAnalysis'
 
 import { Tabs, TabsContent } from '@/components/ui/Tabs'
 
-const VALID_TABS = ['documents', 'knowledge-graph', 'retrieval', 'data-sources', 'analysis'] as const
+const VALID_TABS = ['data-sources', 'documents', 'knowledge-graph', 'retrieval', 'analysis'] as const
 type ValidTab = (typeof VALID_TABS)[number]
 
 const pathToTab = (pathname: string): ValidTab => {
@@ -235,6 +235,9 @@ function App() {
             >
               <SiteHeader />
               <div className="relative grow">
+                <TabsContent value="data-sources" className="absolute top-0 right-0 bottom-0 left-0 overflow-auto">
+                  <DataSourceManager />
+                </TabsContent>
                 <TabsContent value="documents" className="absolute top-0 right-0 bottom-0 left-0 overflow-auto">
                   <DocumentManager />
                 </TabsContent>
@@ -243,9 +246,6 @@ function App() {
                 </TabsContent>
                 <TabsContent value="retrieval" className="absolute top-0 right-0 bottom-0 left-0 overflow-hidden">
                   <RetrievalTesting />
-                </TabsContent>
-                <TabsContent value="data-sources" className="absolute top-0 right-0 bottom-0 left-0 overflow-auto">
-                  <DataSourceManager />
                 </TabsContent>
                 <TabsContent value="analysis" className="absolute top-0 right-0 bottom-0 left-0 overflow-hidden">
                   <SmartAnalysis />

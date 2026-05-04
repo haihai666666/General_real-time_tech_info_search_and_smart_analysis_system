@@ -11,6 +11,7 @@
 
 import json
 import logging
+import os
 import subprocess
 import sys
 import threading
@@ -19,7 +20,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Body
 from pydantic import BaseModel
 
 logger = logging.getLogger("crawler.api")
@@ -127,8 +128,10 @@ def _run_spider_process(spider_name: str, max_results: int, task_id: str):
     """在子进程中运行 Scrapy 爬虫"""
     _running_tasks[task_id]["status"] = "running"
     try:
+        # Use system Python (Anaconda) instead of venv Python
+        python_exe = "python"  # Will use the Python in PATH (Anaconda)
         cmd = [
-            sys.executable, "-m", "scrapy", "crawl", spider_name,
+            python_exe, "-m", "scrapy", "crawl", spider_name,
             "-a", f"max_results={max_results}",
             "-s", "LOG_LEVEL=INFO",
         ]
@@ -334,7 +337,7 @@ async def crawl_stats():
 
 @router.post("/ingest")
 async def trigger_ingest(req: IngestRequest):
-    """触发数据导入 LightRAG"""
+    """触发数据导入 LightRAG（已废弃，使用 /import 代替）"""
     from crawler.ingest import load_articles, format_article_for_rag
 
     articles = load_articles(source=req.source, limit=req.limit)
@@ -352,3 +355,105 @@ async def trigger_ingest(req: IngestRequest):
         "total": len(texts),
         "articles": [{"id": t["id"], "title": t["title"]} for t in texts],
     }
+
+
+@router.post("/import/batch")
+async def import_batch_articles(article_ids: list[str] = Body(...)):
+    """批量导入文章到 LightRAG"""
+    results = []
+    for article_id in article_ids:
+        result = await import_single_article(article_id)
+        results.append(result)
+    
+    success_count = sum(1 for r in results if r["status"] == "success")
+    failed_count = sum(1 for r in results if r["status"] == "failed")
+    skipped_count = sum(1 for r in results if r["status"] == "skipped")
+    
+    return {
+        "status": "completed",
+        "total": len(article_ids),
+        "success": success_count,
+        "failed": failed_count,
+        "skipped": skipped_count,
+        "results": results
+    }
+
+
+@router.post("/import/{article_id}")
+async def import_single_article(article_id: str):
+    """导入单篇文章到 LightRAG"""
+    import requests
+    from crawler.ingest import format_article_for_rag
+    
+    # Load article
+    index = _load_index()
+    entry = next((a for a in index if a["id"] == article_id), None)
+    if not entry:
+        raise HTTPException(404, "Article not found")
+    
+    article = _load_article(article_id, entry.get("source", "unknown"))
+    if not article:
+        raise HTTPException(404, "Article file not found")
+    
+    # Check if already imported
+    if entry.get("status") == "ingested":
+        return {"status": "skipped", "message": "Article already imported", "article_id": article_id}
+    
+    # Format and import
+    text = format_article_for_rag(article)
+    if len(text.strip()) < 50:
+        return {"status": "skipped", "message": "Article content too short", "article_id": article_id}
+    
+    try:
+        # Call LightRAG API
+        api_url = os.getenv("LIGHTRAG_API_URL", "http://localhost:9622")
+        token = os.getenv("LIGHTRAG_API_TOKEN", "")
+        headers = {"Content-Type": "application/json"}
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        
+        resp = requests.post(
+            f"{api_url}/documents/text",
+            json={"text": text},
+            headers=headers,
+            timeout=300,
+        )
+        
+        if resp.status_code in (200, 201):
+            _update_article_status(article_id, "ingested")
+            return {
+                "status": "success",
+                "message": "Article imported successfully",
+                "article_id": article_id,
+                "title": article.get("title", "")[:100]
+            }
+        else:
+            return {
+                "status": "failed",
+                "message": f"LightRAG API error: {resp.status_code}",
+                "article_id": article_id
+            }
+    except Exception as e:
+        logger.error(f"Import failed for {article_id}: {e}")
+        return {"status": "failed", "message": str(e), "article_id": article_id}
+
+
+def _update_article_status(article_id: str, status: str):
+    """更新文章状态"""
+    index_file = ARTICLES_DIR / "index.json"
+    if not index_file.exists():
+        return
+    
+    try:
+        with open(index_file, "r", encoding="utf-8") as f:
+            index = json.load(f)
+        
+        for entry in index:
+            if entry["id"] == article_id:
+                entry["status"] = status
+                break
+        
+        with open(index_file, "w", encoding="utf-8") as f:
+            json.dump(index, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        logger.error(f"Failed to update article status: {e}")

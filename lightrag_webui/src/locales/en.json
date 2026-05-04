@@ -476,7 +476,17 @@
     "searchPlaceholder": "Search titles...",
     "allSources": "All Sources",
     "noArticles": "No articles yet. Start a crawl above.",
-    "showing": "{{start}}-{{end}} of {{total}}"
+    "showing": "{{start}}-{{end}} of {{total}}",
+    "crawlFinished": "Crawl finished: {{spider}}",
+    "importToKG": "Import to Knowledge Graph",
+    "importSuccess": "Imported: {{title}}",
+    "noRawArticles": "No pending articles to import",
+    "importAll": "Import All ({{count}})",
+    "importing": "Importing...",
+    "batchImportDone": "Batch import: {{success}} success, {{failed}} failed ({{total}} total)",
+    "allArticles": "All",
+    "pendingArticles": "Pending",
+    "importedArticles": "Imported"
   },
   "analysis": {
     "trends": "Trend Analysis",
