@@ -1,0 +1,16 @@
+# 科技信息爬虫模块依赖
+scrapy>=2.11.0
+playwright>=1.40.0
+scrapy-playwright>=0.0.40
+celery[redis]>=5.4.0
+redis>=5.0.0
+pymongo>=4.6.0
+pymysql>=1.1.0
+sqlalchemy>=2.0.0
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+lxml>=5.1.0
+fake-useragent>=1.4.0
+python-dateutil>=2.8.0
+python-dotenv>=1.0.0
+feedparser>=6.0.0

@@ -1,0 +1,55 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: techinfo-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: techinfo_root_2026
+      MYSQL_DATABASE: techinfo
+      MYSQL_USER: techinfo
+      MYSQL_PASSWORD: techinfo_pass_2026
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./crawler/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+  mongodb:
+    image: mongo:7.0
+    container_name: techinfo-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: techinfo
+      MONGO_INITDB_ROOT_PASSWORD: techinfo_pass_2026
+      MONGO_INITDB_DATABASE: techinfo
+    volumes:
+      - mongo_data:/data/db
+
+  redis:
+    image: redis:7-alpine
+    container_name: techinfo-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --save 900 1 --save 300 10 --save 60 1000 --maxmemory 1gb --maxmemory-policy noeviction
+    volumes:
+      - redis_data:/data
+
+  neo4j:
+    image: neo4j:5-community
+    container_name: techinfo-neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: neo4j/techinfo_neo4j_2026
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_dbms_memory_heap_max__size: 1G
+    volumes:
+      - neo4j_data:/data
+
+volumes:
+  mysql_data:
+  mongo_data:
+  redis_data:
+  neo4j_data:

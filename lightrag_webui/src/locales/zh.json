@@ -17,7 +17,9 @@
     "themeToggle": {
       "switchToLight": "切换到浅色主题",
       "switchToDark": "切换到深色主题"
-    }
+    },
+    "dataSources": "数据源",
+    "analysis": "智能分析"
   },
   "login": {
     "description": "请输入您的账号和密码登录系统",
@@ -461,5 +463,30 @@
     "prevPage": "上一页",
     "nextPage": "下一页",
     "lastPage": "末页"
+  },
+  "dataSource": {
+    "totalArticles": "文章总数",
+    "spiders": "数据源",
+    "spidersDesc": "管理爬虫并触发数据采集",
+    "triggerCrawl": "开始采集",
+    "crawlStarted": "采集已启动：{{spider}}",
+    "recentLogs": "最近采集日志",
+    "newItems": "条新增",
+    "articles": "已采集文章",
+    "searchPlaceholder": "搜索标题...",
+    "allSources": "全部来源",
+    "noArticles": "暂无文章。请先启动数据采集。",
+    "showing": "{{start}}-{{end}} / {{total}}"
+  },
+  "analysis": {
+    "trends": "趋势分析",
+    "qa": "智能问答",
+    "allSources": "全部来源",
+    "analyze": "分析趋势",
+    "trendResult": "趋势分析结果",
+    "articlesAnalyzed": "篇文章参与分析",
+    "trendHint": "点击「分析趋势」按钮，从已采集文章中生成洞察报告",
+    "qaHint": "询问有关最新科技新闻和研究的问题",
+    "qaPlaceholder": "输入关于科技趋势的问题..."
   }
 }

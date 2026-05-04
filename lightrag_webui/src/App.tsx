@@ -15,10 +15,12 @@ import { ZapIcon } from 'lucide-react'
 import GraphViewer from '@/features/GraphViewer'
 import DocumentManager from '@/features/DocumentManager'
 import RetrievalTesting from '@/features/RetrievalTesting'
+import DataSourceManager from '@/features/DataSourceManager'
+import SmartAnalysis from '@/features/SmartAnalysis'
 
 import { Tabs, TabsContent } from '@/components/ui/Tabs'
 
-const VALID_TABS = ['documents', 'knowledge-graph', 'retrieval'] as const
+const VALID_TABS = ['documents', 'knowledge-graph', 'retrieval', 'data-sources', 'analysis'] as const
 type ValidTab = (typeof VALID_TABS)[number]
 
 const pathToTab = (pathname: string): ValidTab => {
@@ -241,6 +243,12 @@ function App() {
                 </TabsContent>
                 <TabsContent value="retrieval" className="absolute top-0 right-0 bottom-0 left-0 overflow-hidden">
                   <RetrievalTesting />
+                </TabsContent>
+                <TabsContent value="data-sources" className="absolute top-0 right-0 bottom-0 left-0 overflow-auto">
+                  <DataSourceManager />
+                </TabsContent>
+                <TabsContent value="analysis" className="absolute top-0 right-0 bottom-0 left-0 overflow-hidden">
+                  <SmartAnalysis />
                 </TabsContent>
                 </div>
             </Tabs>

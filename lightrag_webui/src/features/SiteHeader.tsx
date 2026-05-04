@@ -48,6 +48,12 @@ function TabsNavigation() {
         <NavigationTab value="retrieval" currentTab={currentTab}>
           {t('header.retrieval')}
         </NavigationTab>
+        <NavigationTab value="data-sources" currentTab={currentTab}>
+          {t('header.dataSources')}
+        </NavigationTab>
+        <NavigationTab value="analysis" currentTab={currentTab}>
+          {t('header.analysis')}
+        </NavigationTab>
       </TabsList>
     </div>
   )
