@@ -36,6 +36,9 @@ AVAILABLE_SPIDERS = {
     "techcrunch": {"name": "techcrunch", "description": "TechCrunch tech news via RSS", "category": "tech_news"},
     "mit_news": {"name": "mit_news", "description": "MIT Technology News", "category": "research"},
     "ieee_spectrum": {"name": "ieee_spectrum", "description": "IEEE Spectrum tech articles", "category": "technology"},
+    "36kr": {"name": "36kr", "description": "36氪科技资讯", "category": "tech_news_cn"},
+    "ifanr": {"name": "ifanr", "description": "爱范儿消费科技", "category": "consumer_tech_cn"},
+    "infoq_cn": {"name": "infoq_cn", "description": "InfoQ 中文技术资讯", "category": "software_dev_cn"},
 }
 
 _running_tasks: dict[str, dict] = {}
@@ -128,13 +131,15 @@ def _run_spider_process(spider_name: str, max_results: int, task_id: str):
     """在子进程中运行 Scrapy 爬虫"""
     _running_tasks[task_id]["status"] = "running"
     try:
-        # Use system Python (Anaconda) instead of venv Python
-        python_exe = "python"  # Will use the Python in PATH (Anaconda)
+        # Use the same Python interpreter as the running API server
+        python_exe = sys.executable or "python"
         cmd = [
             python_exe, "-m", "scrapy", "crawl", spider_name,
             "-a", f"max_results={max_results}",
             "-s", "LOG_LEVEL=INFO",
         ]
+        logger.info("Starting spider process: %s | cwd=%s", " ".join(cmd), SCRAPY_PROJECT_DIR)
+
         result = subprocess.run(
             cmd,
             cwd=str(SCRAPY_PROJECT_DIR),
@@ -142,24 +147,32 @@ def _run_spider_process(spider_name: str, max_results: int, task_id: str):
             text=True,
             timeout=300,
         )
+
         _running_tasks[task_id]["finished_at"] = datetime.now(timezone.utc).isoformat()
+        stdout_tail = (result.stdout or "")[-2000:]
+        stderr_tail = (result.stderr or "")[-2000:]
+
         if result.returncode == 0:
             _running_tasks[task_id]["status"] = "completed"
-            # try to count new items from log output
-            for line in result.stdout.splitlines():
-                if "new" in line.lower() and "item" in line.lower():
-                    _running_tasks[task_id]["log_tail"] = line.strip()
+            _running_tasks[task_id]["log_tail"] = stdout_tail or "Spider finished with no stdout"
+            logger.info("Spider completed: %s", spider_name)
         else:
             _running_tasks[task_id]["status"] = "failed"
-            _running_tasks[task_id]["error"] = (result.stderr or result.stdout)[-500:]
+            _running_tasks[task_id]["error"] = (
+                f"Spider exit code {result.returncode}. "
+                f"STDERR: {stderr_tail or '<empty>'} | STDOUT: {stdout_tail or '<empty>'}"
+            )
+            logger.error("Spider failed: %s | rc=%s | stderr=%s", spider_name, result.returncode, stderr_tail)
     except subprocess.TimeoutExpired:
         _running_tasks[task_id]["status"] = "failed"
         _running_tasks[task_id]["error"] = "Spider timed out after 300s"
         _running_tasks[task_id]["finished_at"] = datetime.now(timezone.utc).isoformat()
+        logger.error("Spider timed out: %s", spider_name)
     except Exception as e:
         _running_tasks[task_id]["status"] = "failed"
         _running_tasks[task_id]["error"] = str(e)
         _running_tasks[task_id]["finished_at"] = datetime.now(timezone.utc).isoformat()
+        logger.exception("Spider crashed: %s", spider_name)
 
 
 # --------------- Endpoints ---------------

@@ -2925,8 +2925,20 @@ async def extract_entities(
     entity_extract_max_gleaning = global_config["entity_extract_max_gleaning"]
 
     ordered_chunks = list(chunks.items())
-    # add language and example number params to prompt
-    language = global_config["addon_params"].get("language", DEFAULT_SUMMARY_LANGUAGE)
+    # Determine extraction language dynamically per insertion batch.
+    # If Chinese characters appear in the chunk contents, extract in Chinese;
+    # otherwise fall back to configured default language.
+    default_language = global_config["addon_params"].get(
+        "language", DEFAULT_SUMMARY_LANGUAGE
+    )
+    sample_text = "\n".join(
+        [
+            (chunk_data.get("content", "") if isinstance(chunk_data, dict) else "")[:500]
+            for _, chunk_data in ordered_chunks[:20]
+        ]
+    )
+    has_chinese = any("\u4e00" <= ch <= "\u9fff" for ch in sample_text)
+    language = "Chinese" if has_chinese else default_language
     entity_types = global_config["addon_params"].get(
         "entity_types", DEFAULT_ENTITY_TYPES
     )

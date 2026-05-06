@@ -22,6 +22,9 @@ const sourceIcons: Record<string, React.ReactNode> = {
   techcrunch: <NewspaperIcon className="size-4" />,
   mit_news: <CpuIcon className="size-4" />,
   ieee_spectrum: <GlobeIcon className="size-4" />,
+  '36kr': <NewspaperIcon className="size-4" />,
+  ifanr: <CpuIcon className="size-4" />,
+  infoq_cn: <BookOpenIcon className="size-4" />,
 }
 
 export default function DataSourceManager() {
@@ -223,6 +226,9 @@ export default function DataSourceManager() {
                 <SelectItem value="techcrunch">TechCrunch</SelectItem>
                 <SelectItem value="mit_news">MIT News</SelectItem>
                 <SelectItem value="ieee_spectrum">IEEE</SelectItem>
+                <SelectItem value="36kr">36氪</SelectItem>
+                <SelectItem value="ifanr">爱范儿</SelectItem>
+                <SelectItem value="infoq_cn">InfoQ 中文</SelectItem>
               </SelectContent>
             </Select>
             <Button variant="ghost" size="icon" onClick={loadArticles} className="text-cyan-300 hover:bg-cyan-500/15">

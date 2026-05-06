@@ -1,4 +1,5 @@
-# 聚合分析平台 - 系统启动文档
+# 通用信息检索与智能分析系统
+## 聚合分析平台 - 系统启动文档
 
 ## 系统架构
 
@@ -24,7 +25,8 @@ pip install httpx python-dotenv fastapi uvicorn
 cd lightrag_webui
 bun install --frozen-lockfile
 ```
-
+### 激活环境
+& d:/General_real-time_tech_info_search_and_smart_analysis_system/.venv/Scripts/Activate.ps1
 ---
 
 ### 步骤 1：构建前端（仅首次或前端代码更新后需要）!!!重要,重要!!!
