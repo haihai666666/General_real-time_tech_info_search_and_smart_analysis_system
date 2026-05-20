@@ -1,8 +1,7 @@
 # 🚀 实时技术信息检索与智能分析系统（LightRAG + 爬虫 + 知识图谱）
 
 > 一个面向科技信息场景的“采集 → 入库 → 图谱构建 → 智能分析 → 可视化问答”一体化系统。  
-> 支持中英文技术资讯，支持知识图谱检索与趋势分析，适合课程项目、技术调研、团队知识库搭建。
-
+> 支持中英文技术资讯，支持知识图谱检索与趋势分析。
 ---
 
 ## 📌 项目亮点
@@ -100,7 +99,7 @@ LightRAG /documents/text
 
 ---
 
-## ⚙️ 配置说明（你当前项目实际）
+## ⚙️ 配置说明
 
 当前 `.env` 中主要使用两套模型入口：
 
@@ -120,11 +119,11 @@ LightRAG /documents/text
 
 ## 💻 本地部署
 
-> 下面按“从零到跑通”给你一套最稳流程。
+> 下面是“从零到跑通”的一套流程。
 
 ## 0. 前置条件
 
-- Windows 10/11（你当前环境已验证）
+- Windows 10/11
 - Python 3.10+
 - Bun（用于前端构建）
 - 网络可访问 DashScope
@@ -156,14 +155,12 @@ python -m pip install scrapy fake-useragent fastapi uvicorn httpx
 
 ## 2. 配置 `.env`
 
-你已配置完成关键字段，重点确认这几组：
-
 ### A) LightRAG 主链路
 
 ```env
 LLM_BINDING=openai
 LLM_BINDING_HOST=https://dashscope.aliyuncs.com/compatible-mode/v1
-LLM_BINDING_API_KEY=你的key
+LLM_BINDING_API_KEY=your-key
 LLM_MODEL=qwen3-max
 ```
 
@@ -171,7 +168,7 @@ LLM_MODEL=qwen3-max
 
 ```env
 QWEN_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
-QWEN_API_KEY=与你上面相同的key
+QWEN_API_KEY=yourkey
 QWEN_MODEL=qwen3.5-plus
 QWEN_TIMEOUT=120
 ```
@@ -181,7 +178,7 @@ QWEN_TIMEOUT=120
 ```env
 EMBEDDING_BINDING=openai
 EMBEDDING_BINDING_HOST=https://dashscope.aliyuncs.com/compatible-mode/v1
-EMBEDDING_BINDING_API_KEY=你的key
+EMBEDDING_BINDING_API_KEY=yourkey
 EMBEDDING_MODEL=text-embedding-v4
 EMBEDDING_DIM=1024
 ```
@@ -261,16 +258,6 @@ python server.py
 
 并重启 `python server.py`。
 
----
-
-## 3) 图谱节点还是英文
-
-你已做过语言逻辑优化。对“旧中文文章”需要：
-
-- 重置为待导入 → 重新导入
-- 新抽取才会按中文输出节点
-
----
 
 ## 4) 前端改了不生效
 
@@ -313,28 +300,8 @@ bun run build
 
 ---
 
-## 📸 你可以补充的截图（我可继续帮你排版）
-
-如果你愿意，我可以把 README 再升级成“图文版”。你可以提供这些截图：
-
-1. 🧩 系统总览首页（含顶部菜单）
-2. 🕷️ 数据源采集页（显示多个源和最近日志）
-3. 📰 已采集文章列表（待导入/已导入分组）
-4. 🕸️ 知识图谱可视化页面
-5. 🧠 智能分析页面（趋势分析结果）
-6. 💬 智能问答页面（对话示例）
-7. ⚙️ `.env` 关键配置段（打码 API Key）
-
-我拿到这些图后，可以继续帮你做：
-- README 图文锚点目录
-- 功能演示流程图
-- 常见问题“对照截图排障”章节
-
----
 
 ## 🖼️ 系统界面展示（实机截图）
-
-> 已按你给的截图整理为图文展示。为了在本地/仓库中正常显示，请把对应图片放到：`docs/images/` 目录下，并使用下列文件名。
 
 ### 1) 数据源总览与采集入口
 
@@ -380,9 +347,6 @@ bun run build
 - 基于已采集文章生成趋势洞察
 - 输出包含热点方向、新兴趋势、产业判断等结构化分析
 
-### 7) 截图文件放置说明（一次性）
-
-请将你刚刚提供的 6 张截图，按如下命名放入 `docs/images/`：
 
 ```text
 docs/images/01-data-source-overview.jpg
@@ -393,13 +357,11 @@ docs/images/05-query-and-qa.jpg
 docs/images/06-smart-analysis-trends.jpg
 ```
 
-放好后，`README.md` 会自动显示完整图文内容。
-
 ---
 
 ## ✅ 当前状态
 
-你的系统当前已经具备：
+系统当前已经具备：
 
 - 多源采集 ✅
 - 文章导入 LightRAG ✅
@@ -407,4 +369,3 @@ docs/images/06-smart-analysis-trends.jpg
 - 智能分析（qwen3.5-plus）✅
 - 中英知识内容混合展示 ✅
 
-> 现在这套已经能用于课程答辩、技术展示、以及持续扩展。继续优化时，建议优先做“数据源稳定性 + 成本监控 + 文档图文化”。
