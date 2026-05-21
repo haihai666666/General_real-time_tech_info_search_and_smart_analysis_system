@@ -1,6 +1,6 @@
 # 科技信息爬虫模块依赖
 scrapy>=2.11.0
-playwright>=1.40.0
+playwright>=1.59.0
 scrapy-playwright>=0.0.40
 celery[redis]>=5.4.0
 redis>=5.0.0
