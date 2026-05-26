@@ -85,3 +85,8 @@ CLAUDE.md
 # Google Jules
 .jules/
 node_modules/
+
+scripts/
+outputs/
+docs/generated/
+docs/images/

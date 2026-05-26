@@ -300,6 +300,13 @@ bun run build
 
 ---
 
+## 🎬 视频 Demo 展示
+
+> 如果你将演示视频放到仓库内的 `docs/videos/demo_show.mp4`，下面的播放器即可在支持 HTML 的 Markdown 渲染环境中直接展示。
+
+<video controls width="100%" src="docs/videos/demo_show.mp4"></video>
+
+---
 
 ## 🖼️ 系统界面展示（实机截图）
 
