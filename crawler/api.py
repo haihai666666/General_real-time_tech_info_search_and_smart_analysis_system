@@ -23,6 +23,8 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Query, Body
 from pydantic import BaseModel
 
+from crawler.crawl_status_utils import extract_spider_counts
+
 logger = logging.getLogger("crawler.api")
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
@@ -33,12 +35,17 @@ SCRAPY_PROJECT_DIR = Path(__file__).resolve().parent / "scrapy_project"
 AVAILABLE_SPIDERS = {
     "arxiv": {"name": "arxiv", "description": "ArXiv CS papers via Atom API", "category": "academic"},
     "github_trending": {"name": "github_trending", "description": "GitHub Trending repositories", "category": "open-source"},
-    "techcrunch": {"name": "techcrunch", "description": "TechCrunch tech news via RSS", "category": "tech_news"},
-    "mit_news": {"name": "mit_news", "description": "MIT Technology News", "category": "research"},
-    "ieee_spectrum": {"name": "ieee_spectrum", "description": "IEEE Spectrum tech articles", "category": "technology"},
     "36kr": {"name": "36kr", "description": "36氪科技资讯", "category": "tech_news_cn"},
     "ifanr": {"name": "ifanr", "description": "爱范儿消费科技", "category": "consumer_tech_cn"},
     "infoq_cn": {"name": "infoq_cn", "description": "InfoQ 中文技术资讯", "category": "software_dev_cn"},
+    "ithome": {"name": "ithome", "description": "IT之家 IT 与数码资讯", "category": "tech_news_cn"},
+    "v2ex": {"name": "v2ex", "description": "V2EX 程序员社区讨论", "category": "community"},
+    "williamlong": {"name": "williamlong", "description": "月光博客 互联网与科技评论", "category": "tech_commentary"},
+    "oschina": {"name": "oschina", "description": "开源中国 开源与开发者资讯", "category": "open_source"},
+    "huxiu": {"name": "huxiu", "description": "虎嗅网 科技商业资讯", "category": "tech_business"},
+    "tmtpost": {"name": "tmtpost", "description": "钛媒体 科技产业报道", "category": "tech_business"},
+    "geekpark": {"name": "geekpark", "description": "极客公园 科技前沿资讯", "category": "tech_insight"},
+    "leiphone": {"name": "leiphone", "description": "雷锋网 AI 与智能硬件资讯", "category": "ai_hardware"},
 }
 
 _running_tasks: dict[str, dict] = {}
@@ -87,6 +94,7 @@ class SpiderInfo(BaseModel):
 
 
 class CrawlStatusResponse(BaseModel):
+    task_id: Optional[str] = None
     spider: str
     status: str  # running / completed / failed
     started_at: Optional[str] = None
@@ -151,11 +159,22 @@ def _run_spider_process(spider_name: str, max_results: int, task_id: str):
         _running_tasks[task_id]["finished_at"] = datetime.now(timezone.utc).isoformat()
         stdout_tail = (result.stdout or "")[-2000:]
         stderr_tail = (result.stderr or "")[-2000:]
+        counts = extract_spider_counts(result.stdout or "", result.stderr or "")
 
         if result.returncode == 0:
-            _running_tasks[task_id]["status"] = "completed"
+            combined_output = f"{result.stdout or ''}\n{result.stderr or ''}"
+            _running_tasks[task_id]["items_count"] = counts["total_items"]
+            _running_tasks[task_id]["new_items_count"] = counts["new_items"]
             _running_tasks[task_id]["log_tail"] = stdout_tail or "Spider finished with no stdout"
-            logger.info("Spider completed: %s", spider_name)
+            if counts["total_items"] == 0 and (
+                "Request failed" in combined_output or "yielded no entries" in combined_output
+            ):
+                _running_tasks[task_id]["status"] = "failed"
+                _running_tasks[task_id]["error"] = "Spider finished without extracting articles; check request/parsing logs."
+                logger.error("Spider completed with zero extracted items: %s", spider_name)
+            else:
+                _running_tasks[task_id]["status"] = "completed"
+                logger.info("Spider completed: %s", spider_name)
         else:
             _running_tasks[task_id]["status"] = "failed"
             _running_tasks[task_id]["error"] = (
@@ -221,6 +240,7 @@ async def trigger_crawl(req: CrawlRequest):
     thread.start()
 
     return CrawlStatusResponse(
+        task_id=task_id,
         spider=req.spider,
         status="starting",
         started_at=_running_tasks[task_id]["started_at"],
@@ -233,11 +253,13 @@ async def crawl_status():
     return {
         "tasks": {
             tid: {
+                "task_id": tid,
                 "spider": t["spider"],
                 "status": t["status"],
                 "started_at": t.get("started_at"),
                 "finished_at": t.get("finished_at"),
                 "error": t.get("error"),
+                "items_count": t.get("items_count", 0),
             }
             for tid, t in _running_tasks.items()
         }

@@ -88,9 +88,12 @@ class JsonFilePipeline:
 
     def close_spider(self, spider):
         stat = self.stats.get(spider.name, {})
+        status = getattr(spider, "crawl_status", None)
+        if status is None:
+            status = "failed" if stat.get("total", 0) == 0 and getattr(spider, "error_count", 0) else "success"
         log_entry = {
             "spider": spider.name,
-            "status": "success",
+            "status": status,
             "total_items": stat.get("total", 0),
             "new_items": stat.get("new", 0),
             "finished_at": datetime.now(timezone.utc).isoformat(),

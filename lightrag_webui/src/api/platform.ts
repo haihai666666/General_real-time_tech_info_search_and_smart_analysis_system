@@ -17,6 +17,7 @@ export type SpiderInfo = {
 }
 
 export type CrawlStatusResponse = {
+  task_id?: string
   spider: string
   status: string
   started_at?: string

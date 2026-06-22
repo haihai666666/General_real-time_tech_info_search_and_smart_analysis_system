@@ -223,7 +223,7 @@ export default function Settings() {
   }, [])
 
   const setGraphMaxNodes = useCallback((nodes: number) => {
-    const maxLimit = backendMaxGraphNodes || 1000
+    const maxLimit = backendMaxGraphNodes || 2000
     if (nodes < 1 || nodes > maxLimit) return
     useSettingsStore.getState().setGraphMaxNodes(nodes, true)
   }, [backendMaxGraphNodes])

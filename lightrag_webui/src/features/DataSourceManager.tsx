@@ -12,19 +12,30 @@ import Badge from '@/components/ui/Badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
 import {
   DatabaseIcon, RefreshCwIcon, PlayIcon, SearchIcon, GlobeIcon,
-  BookOpenIcon, NewspaperIcon, CpuIcon, ChevronLeftIcon, ChevronRightIcon,
   LoaderIcon, AlertCircleIcon, CheckCircleIcon, UploadIcon, PackageIcon,
+  ChevronLeftIcon, ChevronRightIcon,
 } from 'lucide-react'
 
+const BrandIcon = ({ children, bg, fg = '#fff' }: { children: React.ReactNode; bg: string; fg?: string }) => (
+  <div className="flex size-4 items-center justify-center rounded-[3px]" style={{ backgroundColor: bg, color: fg }}>
+    {children}
+  </div>
+)
+
 const sourceIcons: Record<string, React.ReactNode> = {
-  arxiv: <BookOpenIcon className="size-4" />,
-  github_trending: <GlobeIcon className="size-4" />,
-  techcrunch: <NewspaperIcon className="size-4" />,
-  mit_news: <CpuIcon className="size-4" />,
-  ieee_spectrum: <GlobeIcon className="size-4" />,
-  '36kr': <NewspaperIcon className="size-4" />,
-  ifanr: <CpuIcon className="size-4" />,
-  infoq_cn: <BookOpenIcon className="size-4" />,
+  arxiv: <BrandIcon bg="#b31b1b"><span className="text-[8px] font-bold leading-none">arX</span></BrandIcon>,
+  github_trending: <BrandIcon bg="#24292f"><span className="text-[9px] font-bold leading-none">GH</span></BrandIcon>,
+  '36kr': <BrandIcon bg="#ff6a00"><span className="text-[8px] font-black leading-none">36</span></BrandIcon>,
+  ifanr: <BrandIcon bg="#111827"><span className="text-[8px] font-bold leading-none">if</span></BrandIcon>,
+  infoq_cn: <BrandIcon bg="#0f4c81"><span className="text-[8px] font-bold leading-none">IQ</span></BrandIcon>,
+  ithome: <BrandIcon bg="#0f6cbf"><span className="text-[8px] font-bold leading-none">IT</span></BrandIcon>,
+  v2ex: <BrandIcon bg="#34b3ff"><span className="text-[8px] font-bold leading-none">V2</span></BrandIcon>,
+  williamlong: <BrandIcon bg="#7c3aed"><span className="text-[8px] font-bold leading-none">WL</span></BrandIcon>,
+  oschina: <BrandIcon bg="#e60012"><span className="text-[8px] font-bold leading-none">OS</span></BrandIcon>,
+  huxiu: <BrandIcon bg="#f59e0b"><span className="text-[8px] font-bold leading-none">虎</span></BrandIcon>,
+  tmtpost: <BrandIcon bg="#7c2d12"><span className="text-[8px] font-bold leading-none">钛</span></BrandIcon>,
+  geekpark: <BrandIcon bg="#111827"><span className="text-[8px] font-bold leading-none">GP</span></BrandIcon>,
+  leiphone: <BrandIcon bg="#2563eb"><span className="text-[8px] font-bold leading-none">雷</span></BrandIcon>,
 }
 
 export default function DataSourceManager() {
@@ -74,30 +85,46 @@ export default function DataSourceManager() {
   useEffect(() => { loadArticles() }, [loadArticles])
   useEffect(() => { return () => { if (pollRef.current) clearInterval(pollRef.current) } }, [])
 
-  const startPolling = useCallback((spiderName: string) => {
+  const startPolling = useCallback((spiderName: string, taskId?: string) => {
     if (pollRef.current) clearInterval(pollRef.current)
     let ticks = 0
     pollRef.current = setInterval(async () => {
       ticks++
       try {
         const statusRes = await getCrawlStatus()
-        const running = Object.values(statusRes.tasks).some((t: any) => t.spider === spiderName && t.status === 'running')
+        const tasks = taskId
+          ? Object.values(statusRes.tasks).filter((t: any) => t.task_id === taskId)
+          : Object.values(statusRes.tasks).filter((t: any) => t.spider === spiderName)
+        const hasTerminalTask = tasks.some((t: any) => ['completed', 'failed'].includes(t.status))
+        const running = tasks.some((t: any) => t.status === 'running')
         await loadArticles(); await loadData()
-        if (!running || ticks > 60) {
+
+        if (hasTerminalTask || (!running && tasks.length > 0) || ticks > 60) {
           if (pollRef.current) clearInterval(pollRef.current); pollRef.current = null
           setCrawling(p => ({ ...p, [spiderName]: false }))
-          if (!running) toast.success(t('dataSource.crawlFinished', { spider: spiderName }))
+          if (tasks.some((t: any) => t.status === 'failed')) {
+            toast.error(t('dataSource.crawlFailed', { spider: spiderName }))
+          } else if (tasks.length > 0) {
+            toast.success(t('dataSource.crawlFinished', { spider: spiderName }))
+          }
         }
-      } catch { /* keep polling */ }
+      } catch {
+        // Keep polling, but don't lock the UI forever if the backend status endpoint is flaky.
+        if (ticks > 60) {
+          if (pollRef.current) clearInterval(pollRef.current); pollRef.current = null
+          setCrawling(p => ({ ...p, [spiderName]: false }))
+          toast.warning(t('dataSource.crawlStatusTimeout', { spider: spiderName }))
+        }
+      }
     }, 3000)
   }, [loadArticles, loadData, t])
 
   const handleCrawl = async (name: string) => {
     setCrawling(p => ({ ...p, [name]: true }))
     try {
-      await triggerCrawl(name, 20)
+      const res = await triggerCrawl(name, 20)
       toast.success(t('dataSource.crawlStarted', { spider: name }))
-      startPolling(name)
+      startPolling(name, res.task_id)
     } catch (err: any) {
       toast.error(err?.response?.data?.detail || err.message)
       setCrawling(p => ({ ...p, [name]: false }))
@@ -223,12 +250,17 @@ export default function DataSourceManager() {
                 <SelectItem value="all">{t('dataSource.allSources')}</SelectItem>
                 <SelectItem value="arxiv">ArXiv</SelectItem>
                 <SelectItem value="github_trending">GitHub</SelectItem>
-                <SelectItem value="techcrunch">TechCrunch</SelectItem>
-                <SelectItem value="mit_news">MIT News</SelectItem>
-                <SelectItem value="ieee_spectrum">IEEE</SelectItem>
                 <SelectItem value="36kr">36氪</SelectItem>
                 <SelectItem value="ifanr">爱范儿</SelectItem>
                 <SelectItem value="infoq_cn">InfoQ 中文</SelectItem>
+                <SelectItem value="ithome">IT之家</SelectItem>
+                <SelectItem value="v2ex">V2EX</SelectItem>
+                <SelectItem value="williamlong">月光博客</SelectItem>
+                <SelectItem value="oschina">开源中国</SelectItem>
+                <SelectItem value="huxiu">虎嗅网</SelectItem>
+                <SelectItem value="tmtpost">钛媒体</SelectItem>
+                <SelectItem value="geekpark">极客公园</SelectItem>
+                <SelectItem value="leiphone">雷锋网</SelectItem>
               </SelectContent>
             </Select>
             <Button variant="ghost" size="icon" onClick={loadArticles} className="text-cyan-300 hover:bg-cyan-500/15">
