@@ -1,6 +1,6 @@
 # 🚀 实时技术信息检索与智能分析系统（LightRAG + 爬虫 + 知识图谱）
 
-> 一个面向科技信息场景的“采集 → 入库 → 图谱构建 → 智能分析 → 可视化问答”一体化系统。  
+> 一个面向科技信息场景的"采集 → 入库 → 图谱构建 → 智能分析 → 可视化问答"一体化系统。  
 > 支持中英文技术资讯，支持知识图谱检索与趋势分析。
 ---
 
@@ -119,7 +119,7 @@ LightRAG /documents/text
 
 ## 💻 本地部署
 
-> 下面是“从零到跑通”的一套流程。
+> 下面是"从零到跑通"的一套流程。
 
 ## 0. 前置条件
 
@@ -225,10 +225,10 @@ python server.py
 
 ## 🧪 首次使用（建议顺序）
 
-1. 📡 在“数据源窗口”点击采集（推荐先 `36kr / ifanr / infoq_cn`）
-2. 📥 在“已采集文章”里执行导入（单篇或全部导入）
-3. 🕸️ 打开“知识图谱窗口”查看节点关系
-4. 🧠 打开“智能分析窗口”做趋势分析和问答
+1. 📡 在"数据源窗口"点击采集（推荐先 `36kr / ifanr / infoq_cn`）
+2. 📥 在"已采集文章"里执行导入（单篇或全部导入）
+3. 🕸️ 打开"知识图谱窗口"查看节点关系
+4. 🧠 打开"智能分析窗口"做趋势分析和问答
 
 ---
 
@@ -302,9 +302,7 @@ bun run build
 
 ## 🎬 视频 Demo 展示
 
-
-
-<video controls width="100%" src="docs/videos/demo_show_v3.mp4"></video>
+<video src="https://github.com/haihai666666/General_real-time_tech_info_search_and_smart_analysis_system/assets/videos/demo_show.mp4" controls="controls" style="max-width: 100%; height: auto;"></video>
 
 ---
 
@@ -324,7 +322,7 @@ bun run build
 
 - 可查看最近采集任务是否成功
 - 文章列表支持状态区分：`待导入` / `已导入`
-- 支持“全部导入”批处理
+- 支持"全部导入"批处理
 
 ### 3) 已采集文章列表（分页/标签/状态）
 
@@ -375,4 +373,3 @@ docs/images/06-smart-analysis-trends.jpg
 - 图谱构建与检索 ✅
 - 智能分析（qwen3.5-plus）✅
 - 中英知识内容混合展示 ✅
-
