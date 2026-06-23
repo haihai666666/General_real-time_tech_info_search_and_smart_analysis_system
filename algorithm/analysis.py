@@ -17,7 +17,9 @@ import httpx
 logger = logging.getLogger("algorithm.analysis")
 
 QWEN_API_KEY = os.getenv("QWEN_API_KEY", "")
-QWEN_BASE_URL = os.getenv("QWEN_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
+QWEN_BASE_URL = os.getenv(
+    "QWEN_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1"
+)
 QWEN_MODEL = os.getenv("QWEN_MODEL", "qwen-plus")
 QWEN_TIMEOUT = int(os.getenv("QWEN_TIMEOUT", "120"))
 
@@ -174,10 +176,12 @@ async def qa_with_context(
     if history:
         messages.extend(history[-6:])
 
-    messages.append({
-        "role": "user",
-        "content": f"参考资料：\n{context_text}\n\n问题：{question}",
-    })
+    messages.append(
+        {
+            "role": "user",
+            "content": f"参考资料：\n{context_text}\n\n问题：{question}",
+        }
+    )
 
     return await _call_qwen(messages, temperature=0.5, max_tokens=2000)
 
@@ -212,9 +216,11 @@ async def qa_stream(
     if history:
         messages.extend(history[-6:])
 
-    messages.append({
-        "role": "user",
-        "content": f"参考资料：\n{context_text}\n\n问题：{question}",
-    })
+    messages.append(
+        {
+            "role": "user",
+            "content": f"参考资料：\n{context_text}\n\n问题：{question}",
+        }
+    )
 
     return await _call_qwen(messages, temperature=0.5, max_tokens=2000, stream=True)

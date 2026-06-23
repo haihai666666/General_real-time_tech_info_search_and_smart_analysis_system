@@ -33,13 +33,22 @@ class V2exSpider(BaseTechSpider):
 
     def start_requests(self):
         for url in self.FEEDS:
-            yield scrapy.Request(url, callback=self.parse_feed, errback=self.errback_handler, dont_filter=True)
+            yield scrapy.Request(
+                url,
+                callback=self.parse_feed,
+                errback=self.errback_handler,
+                dont_filter=True,
+            )
 
     def parse_feed(self, response):
         entries = extract_feed_entries(response.text)
         logger.info("V2EX feed: found %d entries from %s", len(entries), response.url)
         if not entries:
-            logger.warning("V2EX feed yielded no entries: %s (%d bytes)", response.url, len(response.body))
+            logger.warning(
+                "V2EX feed yielded no entries: %s (%d bytes)",
+                response.url,
+                len(response.body),
+            )
 
         for entry in entries:
             if self._emitted >= self.max_results:
@@ -51,7 +60,8 @@ class V2exSpider(BaseTechSpider):
                 content=content,
                 summary=(entry["summary"] or content)[:300],
                 url=entry["link"],
-                published_at=entry["published_at"] or datetime.now(timezone.utc).isoformat(),
+                published_at=entry["published_at"]
+                or datetime.now(timezone.utc).isoformat(),
                 source="v2ex",
                 category="community",
                 language="zh",

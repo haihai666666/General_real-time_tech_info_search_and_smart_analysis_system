@@ -16,16 +16,21 @@ from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
-DATA_DIR = Path(os.getenv(
-    "CRAWLER_DATA_DIR",
-    str(Path(__file__).resolve().parent.parent.parent.parent / "data"),
-))
+DATA_DIR = Path(
+    os.getenv(
+        "CRAWLER_DATA_DIR",
+        str(Path(__file__).resolve().parent.parent.parent.parent / "data"),
+    )
+)
 ARTICLES_DIR = DATA_DIR / "articles"
 LOGS_DIR = DATA_DIR / "logs"
-SCRAPY_PROJECT_DIR = Path(__file__).resolve().parent.parent.parent.parent / "crawler" / "scrapy_project"
+SCRAPY_PROJECT_DIR = (
+    Path(__file__).resolve().parent.parent.parent.parent / "crawler" / "scrapy_project"
+)
 
 
 # ───── Pydantic Models ─────
+
 
 class ArticleResponse(BaseModel):
     id: str = ""
@@ -84,6 +89,7 @@ class IngestResponse(BaseModel):
 
 # ───── Helper functions ─────
 
+
 def _load_index() -> list[dict]:
     index_file = ARTICLES_DIR / "index.json"
     if not index_file.exists():
@@ -138,7 +144,11 @@ def _run_spider_sync(spider_name: str, max_results: int = 20):
         if result.returncode == 0:
             logger.info("Spider %s completed successfully", spider_name)
         else:
-            logger.error("Spider %s failed: %s", spider_name, result.stderr[-500:] if result.stderr else "unknown")
+            logger.error(
+                "Spider %s failed: %s",
+                spider_name,
+                result.stderr[-500:] if result.stderr else "unknown",
+            )
     except subprocess.TimeoutExpired:
         logger.error("Spider %s timed out", spider_name)
     except Exception as e:
@@ -146,6 +156,7 @@ def _run_spider_sync(spider_name: str, max_results: int = 20):
 
 
 # ───── Router Factory ─────
+
 
 def create_crawler_routes():
     router = APIRouter(prefix="/api/crawler", tags=["Crawler"])
@@ -192,7 +203,10 @@ def create_crawler_routes():
                 articles.append(entry)
 
         return ArticleListResponse(
-            total=total, page=page, page_size=page_size, articles=articles,
+            total=total,
+            page=page,
+            page_size=page_size,
+            articles=articles,
         )
 
     @router.get("/articles/{article_id}", response_model=ArticleResponse)
@@ -210,7 +224,9 @@ def create_crawler_routes():
         total = len(index)
 
         today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        today_new = sum(1 for a in index if a.get("crawled_at", "").startswith(today_str))
+        today_new = sum(
+            1 for a in index if a.get("crawled_at", "").startswith(today_str)
+        )
 
         sources = {}
         categories = {}
@@ -239,9 +255,17 @@ def create_crawler_routes():
         return logs[:limit]
 
     @router.post("/trigger", response_model=TriggerCrawlResponse)
-    async def trigger_crawl(req: TriggerCrawlRequest, background_tasks: BackgroundTasks):
+    async def trigger_crawl(
+        req: TriggerCrawlRequest, background_tasks: BackgroundTasks
+    ):
         """手动触发爬虫任务（后台运行）"""
-        valid_spiders = ["arxiv", "github_trending", "mit_news", "techcrunch", "ieee_spectrum"]
+        valid_spiders = [
+            "arxiv",
+            "github_trending",
+            "mit_news",
+            "techcrunch",
+            "ieee_spectrum",
+        ]
         if req.spider_name not in valid_spiders:
             raise HTTPException(
                 status_code=400,
@@ -293,7 +317,9 @@ def create_crawler_routes():
     async def get_available_categories():
         """获取所有可用的分类"""
         index = _load_index()
-        categories = list(set(a.get("category", "") for a in index if a.get("category")))
+        categories = list(
+            set(a.get("category", "") for a in index if a.get("category"))
+        )
         return {"categories": sorted(categories)}
 
     @router.get("/spiders")
@@ -301,11 +327,31 @@ def create_crawler_routes():
         """获取所有可用的爬虫列表"""
         return {
             "spiders": [
-                {"name": "arxiv", "description": "ArXiv CS papers (API-based, most reliable)", "category": "academic"},
-                {"name": "github_trending", "description": "GitHub Trending repositories", "category": "open-source"},
-                {"name": "mit_news", "description": "MIT News technology articles", "category": "research"},
-                {"name": "techcrunch", "description": "TechCrunch RSS feed", "category": "tech_news"},
-                {"name": "ieee_spectrum", "description": "IEEE Spectrum articles", "category": "technology"},
+                {
+                    "name": "arxiv",
+                    "description": "ArXiv CS papers (API-based, most reliable)",
+                    "category": "academic",
+                },
+                {
+                    "name": "github_trending",
+                    "description": "GitHub Trending repositories",
+                    "category": "open-source",
+                },
+                {
+                    "name": "mit_news",
+                    "description": "MIT News technology articles",
+                    "category": "research",
+                },
+                {
+                    "name": "techcrunch",
+                    "description": "TechCrunch RSS feed",
+                    "category": "tech_news",
+                },
+                {
+                    "name": "ieee_spectrum",
+                    "description": "IEEE Spectrum articles",
+                    "category": "technology",
+                },
             ]
         }
 
@@ -367,7 +413,9 @@ def _run_ingest(candidates: list[dict], api_url: str):
                 _update_index_status(index_file, entry["id"], "ingested")
                 logger.info("Ingested article: %s", title[:60])
             else:
-                logger.error("Failed to ingest '%s': HTTP %d", title[:60], resp.status_code)
+                logger.error(
+                    "Failed to ingest '%s': HTTP %d", title[:60], resp.status_code
+                )
         except Exception as e:
             logger.error("Ingest error for '%s': %s", title[:60], e)
 

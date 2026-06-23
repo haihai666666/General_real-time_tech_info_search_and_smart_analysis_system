@@ -30,7 +30,12 @@ class TmtpostSpider(BaseTechSpider):
 
     def start_requests(self):
         for url in self.FEED_URLS:
-            yield scrapy.Request(url, callback=self.parse_feed_or_list, errback=self.errback_handler, dont_filter=True)
+            yield scrapy.Request(
+                url,
+                callback=self.parse_feed_or_list,
+                errback=self.errback_handler,
+                dont_filter=True,
+            )
 
     def parse_feed_or_list(self, response):
         items = response.xpath("//item")
@@ -63,13 +68,25 @@ class TmtpostSpider(BaseTechSpider):
             if "tmtpost.com" not in href or href in seen:
                 continue
             seen.add(href)
-            yield scrapy.Request(href, callback=self.parse_article, errback=self.errback_handler)
+            yield scrapy.Request(
+                href, callback=self.parse_article, errback=self.errback_handler
+            )
 
     def parse_article(self, response):
-        title = response.css("h1::text, meta[property='og:title']::attr(content)").get("").strip()
-        content = " ".join(response.css("article p::text, .content p::text, p::text").getall())
+        title = (
+            response.css("h1::text, meta[property='og:title']::attr(content)")
+            .get("")
+            .strip()
+        )
+        content = " ".join(
+            response.css("article p::text, .content p::text, p::text").getall()
+        )
         if len(content) < 30:
-            content = response.css("meta[property='og:description']::attr(content)").get("").strip()
+            content = (
+                response.css("meta[property='og:description']::attr(content)")
+                .get("")
+                .strip()
+            )
         if title and content:
             yield self.make_article(
                 title=title,

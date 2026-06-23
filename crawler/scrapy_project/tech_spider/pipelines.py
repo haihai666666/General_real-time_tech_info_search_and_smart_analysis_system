@@ -8,10 +8,12 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-DATA_DIR = Path(os.getenv(
-    "CRAWLER_DATA_DIR",
-    str(Path(__file__).resolve().parent.parent.parent.parent / "data"),
-))
+DATA_DIR = Path(
+    os.getenv(
+        "CRAWLER_DATA_DIR",
+        str(Path(__file__).resolve().parent.parent.parent.parent / "data"),
+    )
+)
 
 
 class CleaningPipeline:
@@ -58,6 +60,7 @@ class DuplicateFilterPipeline:
         url_hash = hashlib.md5(url.encode()).hexdigest()
         if url_hash in self.seen_urls:
             from scrapy.exceptions import DropItem
+
             raise DropItem(f"Duplicate article: {url}")
         self.seen_urls.add(url_hash)
         return item
@@ -90,7 +93,11 @@ class JsonFilePipeline:
         stat = self.stats.get(spider.name, {})
         status = getattr(spider, "crawl_status", None)
         if status is None:
-            status = "failed" if stat.get("total", 0) == 0 and getattr(spider, "error_count", 0) else "success"
+            status = (
+                "failed"
+                if stat.get("total", 0) == 0 and getattr(spider, "error_count", 0)
+                else "success"
+            )
         log_entry = {
             "spider": spider.name,
             "status": status,
@@ -112,7 +119,9 @@ class JsonFilePipeline:
 
         logger.info(
             "Spider %s finished: %d total, %d new",
-            spider.name, stat.get("total", 0), stat.get("new", 0),
+            spider.name,
+            stat.get("total", 0),
+            stat.get("new", 0),
         )
 
     def process_item(self, item, spider):
@@ -186,6 +195,7 @@ class MongoDBPipeline:
 
     def open_spider(self, spider):
         import pymongo as _pymongo
+
         self.client = _pymongo.MongoClient(self.mongo_uri)
         self.db = self.client[self.mongo_db]
         self.db.tech_articles.create_index([("url", _pymongo.ASCENDING)], unique=True)
@@ -199,6 +209,7 @@ class MongoDBPipeline:
 
     def process_item(self, item, spider):
         import pymongo as _pymongo
+
         doc = dict(item)
         doc["status"] = "raw"
         try:
@@ -238,6 +249,7 @@ class MySQLLogPipeline:
 
     def open_spider(self, spider):
         import pymysql as _pymysql
+
         self.conn = _pymysql.connect(
             host=self.host,
             port=self.port,

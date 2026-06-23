@@ -95,8 +95,17 @@ class JiqizhixinSpider(BaseTechSpider):
             normalized.append(full)
 
         blacklist_keywords = [
-            "/tag", "/topic", "/author", "/about", "/contact", "/login",
-            "/register", "/privacy", "/terms", "/search", "/sitemap",
+            "/tag",
+            "/topic",
+            "/author",
+            "/about",
+            "/contact",
+            "/login",
+            "/register",
+            "/privacy",
+            "/terms",
+            "/search",
+            "/sitemap",
         ]
 
         candidates = []
@@ -116,7 +125,9 @@ class JiqizhixinSpider(BaseTechSpider):
         if len(candidates) < 3:
             import re
 
-            text_urls = re.findall(r"https?://(?:www\.)?jiqizhixin\.com/[^\"'\s<>]+", response.text)
+            text_urls = re.findall(
+                r"https?://(?:www\.)?jiqizhixin\.com/[^\"'\s<>]+", response.text
+            )
             for link in text_urls:
                 lower = link.lower()
                 if any(k in lower for k in blacklist_keywords):
@@ -132,9 +143,13 @@ class JiqizhixinSpider(BaseTechSpider):
             logger.warning("Jiqizhixin homepage fallback found 0 candidate links")
             return
 
-        logger.info("Jiqizhixin homepage fallback found %d candidate links", len(article_urls))
+        logger.info(
+            "Jiqizhixin homepage fallback found %d candidate links", len(article_urls)
+        )
         for url in article_urls:
-            yield scrapy.Request(url, callback=self.parse_article, errback=self.errback_handler)
+            yield scrapy.Request(
+                url, callback=self.parse_article, errback=self.errback_handler
+            )
 
     def parse_article(self, response):
         """解析文章详情（兜底方案）"""
@@ -148,7 +163,9 @@ class JiqizhixinSpider(BaseTechSpider):
             or response.css("title::text").get("")
         ).strip()
 
-        paragraphs = response.css("article p::text, .article p::text, .content p::text, p::text").getall()
+        paragraphs = response.css(
+            "article p::text, .article p::text, .content p::text, p::text"
+        ).getall()
         content = "\n".join([p.strip() for p in paragraphs if p and p.strip()])
 
         if len(content) < 40:

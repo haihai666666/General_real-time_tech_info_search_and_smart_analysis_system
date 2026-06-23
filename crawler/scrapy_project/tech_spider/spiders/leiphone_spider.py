@@ -27,7 +27,12 @@ class LeiphoneSpider(BaseTechSpider):
 
     def start_requests(self):
         for url in self.FEED_URLS:
-            yield scrapy.Request(url, callback=self.parse_feed, errback=self.errback_handler, dont_filter=True)
+            yield scrapy.Request(
+                url,
+                callback=self.parse_feed,
+                errback=self.errback_handler,
+                dont_filter=True,
+            )
 
     def parse_feed(self, response):
         items = response.xpath("//item")

@@ -31,8 +31,18 @@ class OschinaSpider(BaseTechSpider):
 
     def start_requests(self):
         for url in self.FEED_URLS:
-            yield scrapy.Request(url, callback=self.parse_feed, errback=self.errback_handler, dont_filter=True)
-        yield scrapy.Request("https://www.oschina.net/news", callback=self.parse_news_list, errback=self.errback_handler, dont_filter=True)
+            yield scrapy.Request(
+                url,
+                callback=self.parse_feed,
+                errback=self.errback_handler,
+                dont_filter=True,
+            )
+        yield scrapy.Request(
+            "https://www.oschina.net/news",
+            callback=self.parse_news_list,
+            errback=self.errback_handler,
+            dont_filter=True,
+        )
 
     def parse_feed(self, response):
         items = response.xpath("//item")
@@ -71,11 +81,16 @@ class OschinaSpider(BaseTechSpider):
             full = urljoin(response.url, href)
             if "oschina.net" not in full or full in seen:
                 continue
-            if any(x in full for x in ["/tag/", "/search", "/project/", "/people/", "/event/"]):
+            if any(
+                x in full
+                for x in ["/tag/", "/search", "/project/", "/people/", "/event/"]
+            ):
                 continue
             seen.add(full)
             count += 1
-            yield scrapy.Request(full, callback=self.parse_article, errback=self.errback_handler)
+            yield scrapy.Request(
+                full, callback=self.parse_article, errback=self.errback_handler
+            )
 
     def parse_article(self, response):
         title = (
@@ -83,9 +98,20 @@ class OschinaSpider(BaseTechSpider):
             or response.css("meta[property='og:title']::attr(content)").get()
             or response.css("title::text").get("")
         ).strip()
-        content = "\n".join([p.strip() for p in response.css("article p::text, .article p::text, .news-content p::text, p::text").getall() if p.strip()])
+        content = "\n".join(
+            [
+                p.strip()
+                for p in response.css(
+                    "article p::text, .article p::text, .news-content p::text, p::text"
+                ).getall()
+                if p.strip()
+            ]
+        )
         if len(content) < 50:
-            content = (response.css("meta[property='og:description']::attr(content)").get() or "").strip()
+            content = (
+                response.css("meta[property='og:description']::attr(content)").get()
+                or ""
+            ).strip()
         if title and content:
             yield self.make_article(
                 title=title,

@@ -27,23 +27,31 @@ class MitNewsSpider(BaseTechSpider):
 
     def start_requests(self):
         for url in self.TOPIC_URLS:
-            yield scrapy.Request(url, callback=self.parse_list, errback=self.errback_handler)
+            yield scrapy.Request(
+                url, callback=self.parse_list, errback=self.errback_handler
+            )
 
     def parse_list(self, response):
         article_links = response.css("h3.news-card--title a::attr(href)").getall()
         if not article_links:
             article_links = response.css("a.news-card--link::attr(href)").getall()
-        logger.info("MIT News: found %d article links on %s", len(article_links), response.url)
+        logger.info(
+            "MIT News: found %d article links on %s", len(article_links), response.url
+        )
         for link in article_links:
             full_url = response.urljoin(link)
-            yield scrapy.Request(full_url, callback=self.parse_article, errback=self.errback_handler)
+            yield scrapy.Request(
+                full_url, callback=self.parse_article, errback=self.errback_handler
+            )
 
     def parse_article(self, response):
         title = response.css("h1.article-title::text").get("")
         if not title:
             title = response.css("h1::text").get("").strip()
 
-        paragraphs = response.css("div.article-body p::text, div.article-body p *::text").getall()
+        paragraphs = response.css(
+            "div.article-body p::text, div.article-body p *::text"
+        ).getall()
         content = " ".join(p.strip() for p in paragraphs if p.strip())
 
         date_str = response.css("time::attr(datetime)").get("")

@@ -24,12 +24,15 @@ class BaseTechSpider(scrapy.Spider):
         self.error_count += 1
         logger.error(
             "[%s] Request failed: %s - %s",
-            self.name, failure.request.url, failure.getErrorMessage(),
+            self.name,
+            failure.request.url,
+            failure.getErrorMessage(),
         )
 
     def make_article(self, **kwargs):
         """构造标准文章item"""
         from tech_spider.items import TechArticleItem
+
         item = TechArticleItem()
         item["source"] = kwargs.get("source", self.name)
         item["crawled_at"] = datetime.now(timezone.utc).isoformat()

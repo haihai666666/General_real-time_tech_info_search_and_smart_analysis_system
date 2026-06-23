@@ -27,11 +27,13 @@ class Kr36Spider(BaseTechSpider):
     def start_requests(self):
         # 36氪 RSS feed
         rss_url = "https://36kr.com/feed"
-        yield scrapy.Request(rss_url, callback=self.parse_rss, errback=self.errback_handler)
+        yield scrapy.Request(
+            rss_url, callback=self.parse_rss, errback=self.errback_handler
+        )
 
     def parse_rss(self, response):
         """解析 RSS feed"""
-        items = response.xpath("//item")[:self.max_results]
+        items = response.xpath("//item")[: self.max_results]
         logger.info("36kr: found %d items", len(items))
 
         for item in items:
@@ -39,10 +41,10 @@ class Kr36Spider(BaseTechSpider):
             link = item.xpath("link/text()").get("").strip()
             description = item.xpath("description/text()").get("").strip()
             pub_date = item.xpath("pubDate/text()").get("")
-            
+
             # 解析分类
             categories = item.xpath("category/text()").getall()
-            
+
             # 提取作者（如果有）
             creator = item.xpath("*[local-name()='creator']/text()").get("")
             authors = [creator] if creator else []
@@ -66,14 +68,14 @@ class Kr36Spider(BaseTechSpider):
         articles = response.css("div.article-item")
         logger.info("36kr: found %d articles on page", len(articles))
 
-        for article in articles[:self.max_results]:
+        for article in articles[: self.max_results]:
             title = article.css("h3::text, h2::text").get("").strip()
             link = article.css("a::attr(href)").get("")
             if link:
                 link = urljoin(response.url, link)
-            
+
             summary = article.css("p.summary::text, div.desc::text").get("").strip()
-            
+
             yield self.make_article(
                 title=title,
                 content=summary,

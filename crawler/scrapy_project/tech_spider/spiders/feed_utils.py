@@ -67,7 +67,8 @@ def _atom_entry(entry) -> dict:
         "link": _atom_link(entry),
         "content": content,
         "summary": _child_text(entry, "summary") or content,
-        "published_at": _child_text(entry, "published") or _child_text(entry, "updated"),
+        "published_at": _child_text(entry, "published")
+        or _child_text(entry, "updated"),
         "authors": authors,
         "tags": tags,
     }

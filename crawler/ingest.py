@@ -12,19 +12,22 @@ import argparse
 import json
 import logging
 import os
-import sys
 import time
 from pathlib import Path
 
 import requests
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(levelname)s: %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(name)s] %(levelname)s: %(message)s"
+)
 logger = logging.getLogger("crawler.ingest")
 
-DATA_DIR = Path(os.getenv(
-    "CRAWLER_DATA_DIR",
-    str(Path(__file__).resolve().parent.parent / "data"),
-))
+DATA_DIR = Path(
+    os.getenv(
+        "CRAWLER_DATA_DIR",
+        str(Path(__file__).resolve().parent.parent / "data"),
+    )
+)
 ARTICLES_DIR = DATA_DIR / "articles"
 DEFAULT_API_URL = os.getenv("LIGHTRAG_API_URL", "http://localhost:9622")
 
@@ -82,7 +85,9 @@ def load_articles(source: str = None, limit: int = None) -> list[dict]:
         if source and entry.get("source") != source:
             continue
 
-        article_file = ARTICLES_DIR / entry.get("source", "unknown") / f"{entry['id']}.json"
+        article_file = (
+            ARTICLES_DIR / entry.get("source", "unknown") / f"{entry['id']}.json"
+        )
         if not article_file.exists():
             continue
 
@@ -119,7 +124,7 @@ def ingest_to_lightrag(articles: list[dict], api_url: str, batch_size: int = 5) 
     stats = {"total": len(articles), "success": 0, "failed": 0, "skipped": 0}
 
     for i in range(0, len(articles), batch_size):
-        batch = articles[i:i + batch_size]
+        batch = articles[i : i + batch_size]
         texts = []
         ids = []
         file_paths = []
@@ -156,15 +161,20 @@ def ingest_to_lightrag(articles: list[dict], api_url: str, batch_size: int = 5) 
                     update_article_status(batch[idx]["id"], "ingested")
                     logger.info(
                         "Article %d/%d ingested successfully: %s",
-                        i + idx + 1, len(articles), batch[idx].get("title", "")[:50],
+                        i + idx + 1,
+                        len(articles),
+                        batch[idx].get("title", "")[:50],
                     )
                 else:
                     stats["failed"] += 1
                     logger.error(
                         "Article %d/%d failed (HTTP %d): %s",
-                        i + idx + 1, len(articles), resp.status_code, resp.text[:200],
+                        i + idx + 1,
+                        len(articles),
+                        resp.status_code,
+                        resp.text[:200],
                     )
-                
+
                 # Small delay between uploads
                 if idx < len(texts) - 1:
                     time.sleep(0.5)
@@ -179,12 +189,24 @@ def ingest_to_lightrag(articles: list[dict], api_url: str, batch_size: int = 5) 
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Import crawled articles into LightRAG")
-    parser.add_argument("--source", type=str, default=None, help="Filter by source (e.g. arxiv)")
-    parser.add_argument("--limit", type=int, default=None, help="Max articles to import")
-    parser.add_argument("--api-url", type=str, default=DEFAULT_API_URL, help="LightRAG API URL")
-    parser.add_argument("--batch-size", type=int, default=5, help="Batch size for import")
-    parser.add_argument("--dry-run", action="store_true", help="Show articles without importing")
+    parser = argparse.ArgumentParser(
+        description="Import crawled articles into LightRAG"
+    )
+    parser.add_argument(
+        "--source", type=str, default=None, help="Filter by source (e.g. arxiv)"
+    )
+    parser.add_argument(
+        "--limit", type=int, default=None, help="Max articles to import"
+    )
+    parser.add_argument(
+        "--api-url", type=str, default=DEFAULT_API_URL, help="LightRAG API URL"
+    )
+    parser.add_argument(
+        "--batch-size", type=int, default=5, help="Batch size for import"
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Show articles without importing"
+    )
     args = parser.parse_args()
 
     logger.info("Loading articles from %s", ARTICLES_DIR)
@@ -205,7 +227,10 @@ def main():
     stats = ingest_to_lightrag(articles, args.api_url, batch_size=args.batch_size)
     logger.info(
         "Import complete: %d success, %d failed, %d skipped (total: %d)",
-        stats["success"], stats["failed"], stats["skipped"], stats["total"],
+        stats["success"],
+        stats["failed"],
+        stats["skipped"],
+        stats["total"],
     )
 
 

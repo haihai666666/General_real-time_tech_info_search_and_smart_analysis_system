@@ -115,4 +115,3 @@ MIN_RERANK_SCORE=0.0         # 可选：低于阈值的候选直接丢弃
 - 默认策略：段落优先（双换行/单换行）聚合成块，token 超限再兜底切分
 - 上下文连续：对超限切分使用滑窗 overlap；并在 doc_status 记录 chunking 参数用于回溯
 - 可配置：CHUNK_SIZE、CHUNK_OVERLAP_SIZE；CHUNK_METHOD=structure/token 切换策略
-

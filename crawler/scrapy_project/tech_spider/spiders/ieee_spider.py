@@ -27,7 +27,9 @@ class IeeeSpectrumSpider(BaseTechSpider):
 
     def start_requests(self):
         for url in self.START_URLS:
-            yield scrapy.Request(url, callback=self.parse_list, errback=self.errback_handler)
+            yield scrapy.Request(
+                url, callback=self.parse_list, errback=self.errback_handler
+            )
 
     def parse_list(self, response):
         links = response.css("h2 a::attr(href), h3 a::attr(href)").getall()
@@ -36,7 +38,9 @@ class IeeeSpectrumSpider(BaseTechSpider):
         logger.info("IEEE Spectrum: found %d links on %s", len(links), response.url)
         for link in links[:20]:
             full_url = response.urljoin(link)
-            yield scrapy.Request(full_url, callback=self.parse_article, errback=self.errback_handler)
+            yield scrapy.Request(
+                full_url, callback=self.parse_article, errback=self.errback_handler
+            )
 
     def parse_article(self, response):
         title = response.css("h1::text").get("").strip()
@@ -45,10 +49,14 @@ class IeeeSpectrumSpider(BaseTechSpider):
 
         date_str = response.css("time::attr(datetime)").get("")
         if not date_str:
-            date_str = response.css("meta[property='article:published_time']::attr(content)").get("")
+            date_str = response.css(
+                "meta[property='article:published_time']::attr(content)"
+            ).get("")
 
         author = response.css("a[rel='author']::text").get("").strip()
-        tags = response.css("a.tag::text, meta[name='keywords']::attr(content)").getall()
+        tags = response.css(
+            "a.tag::text, meta[name='keywords']::attr(content)"
+        ).getall()
         tags = [t.strip() for t in tags if t.strip()]
 
         if title and content:

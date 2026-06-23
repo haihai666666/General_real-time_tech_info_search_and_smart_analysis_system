@@ -1984,7 +1984,9 @@ class LightRAG:
                                                 "processing_start_time": processing_start_time,
                                                 "chunking": {
                                                     "method": getattr(
-                                                        self.chunking_func, "__name__", "unknown"
+                                                        self.chunking_func,
+                                                        "__name__",
+                                                        "unknown",
                                                     ),
                                                     "chunk_token_size": self.chunk_token_size,
                                                     "chunk_overlap_token_size": self.chunk_overlap_token_size,
@@ -2093,7 +2095,9 @@ class LightRAG:
                                             "processing_end_time": processing_end_time,
                                             "chunking": {
                                                 "method": getattr(
-                                                    self.chunking_func, "__name__", "unknown"
+                                                    self.chunking_func,
+                                                    "__name__",
+                                                    "unknown",
                                                 ),
                                                 "chunk_token_size": self.chunk_token_size,
                                                 "chunk_overlap_token_size": self.chunk_overlap_token_size,

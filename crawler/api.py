@@ -33,19 +33,67 @@ LOGS_DIR = DATA_DIR / "logs"
 SCRAPY_PROJECT_DIR = Path(__file__).resolve().parent / "scrapy_project"
 
 AVAILABLE_SPIDERS = {
-    "arxiv": {"name": "arxiv", "description": "ArXiv CS papers via Atom API", "category": "academic"},
-    "github_trending": {"name": "github_trending", "description": "GitHub Trending repositories", "category": "open-source"},
+    "arxiv": {
+        "name": "arxiv",
+        "description": "ArXiv CS papers via Atom API",
+        "category": "academic",
+    },
+    "github_trending": {
+        "name": "github_trending",
+        "description": "GitHub Trending repositories",
+        "category": "open-source",
+    },
     "36kr": {"name": "36kr", "description": "36氪科技资讯", "category": "tech_news_cn"},
-    "ifanr": {"name": "ifanr", "description": "爱范儿消费科技", "category": "consumer_tech_cn"},
-    "infoq_cn": {"name": "infoq_cn", "description": "InfoQ 中文技术资讯", "category": "software_dev_cn"},
-    "ithome": {"name": "ithome", "description": "IT之家 IT 与数码资讯", "category": "tech_news_cn"},
-    "v2ex": {"name": "v2ex", "description": "V2EX 程序员社区讨论", "category": "community"},
-    "williamlong": {"name": "williamlong", "description": "月光博客 互联网与科技评论", "category": "tech_commentary"},
-    "oschina": {"name": "oschina", "description": "开源中国 开源与开发者资讯", "category": "open_source"},
-    "huxiu": {"name": "huxiu", "description": "虎嗅网 科技商业资讯", "category": "tech_business"},
-    "tmtpost": {"name": "tmtpost", "description": "钛媒体 科技产业报道", "category": "tech_business"},
-    "geekpark": {"name": "geekpark", "description": "极客公园 科技前沿资讯", "category": "tech_insight"},
-    "leiphone": {"name": "leiphone", "description": "雷锋网 AI 与智能硬件资讯", "category": "ai_hardware"},
+    "ifanr": {
+        "name": "ifanr",
+        "description": "爱范儿消费科技",
+        "category": "consumer_tech_cn",
+    },
+    "infoq_cn": {
+        "name": "infoq_cn",
+        "description": "InfoQ 中文技术资讯",
+        "category": "software_dev_cn",
+    },
+    "ithome": {
+        "name": "ithome",
+        "description": "IT之家 IT 与数码资讯",
+        "category": "tech_news_cn",
+    },
+    "v2ex": {
+        "name": "v2ex",
+        "description": "V2EX 程序员社区讨论",
+        "category": "community",
+    },
+    "williamlong": {
+        "name": "williamlong",
+        "description": "月光博客 互联网与科技评论",
+        "category": "tech_commentary",
+    },
+    "oschina": {
+        "name": "oschina",
+        "description": "开源中国 开源与开发者资讯",
+        "category": "open_source",
+    },
+    "huxiu": {
+        "name": "huxiu",
+        "description": "虎嗅网 科技商业资讯",
+        "category": "tech_business",
+    },
+    "tmtpost": {
+        "name": "tmtpost",
+        "description": "钛媒体 科技产业报道",
+        "category": "tech_business",
+    },
+    "geekpark": {
+        "name": "geekpark",
+        "description": "极客公园 科技前沿资讯",
+        "category": "tech_insight",
+    },
+    "leiphone": {
+        "name": "leiphone",
+        "description": "雷锋网 AI 与智能硬件资讯",
+        "category": "ai_hardware",
+    },
 }
 
 _running_tasks: dict[str, dict] = {}
@@ -54,6 +102,7 @@ router = APIRouter(prefix="/api/crawler", tags=["crawler"])
 
 
 # --------------- Models ---------------
+
 
 class CrawlRequest(BaseModel):
     spider: str
@@ -113,6 +162,7 @@ class CrawlLogEntry(BaseModel):
 
 # --------------- Helpers ---------------
 
+
 def _load_index() -> list[dict]:
     index_file = ARTICLES_DIR / "index.json"
     if not index_file.exists():
@@ -142,11 +192,19 @@ def _run_spider_process(spider_name: str, max_results: int, task_id: str):
         # Use the same Python interpreter as the running API server
         python_exe = sys.executable or "python"
         cmd = [
-            python_exe, "-m", "scrapy", "crawl", spider_name,
-            "-a", f"max_results={max_results}",
-            "-s", "LOG_LEVEL=INFO",
+            python_exe,
+            "-m",
+            "scrapy",
+            "crawl",
+            spider_name,
+            "-a",
+            f"max_results={max_results}",
+            "-s",
+            "LOG_LEVEL=INFO",
         ]
-        logger.info("Starting spider process: %s | cwd=%s", " ".join(cmd), SCRAPY_PROJECT_DIR)
+        logger.info(
+            "Starting spider process: %s | cwd=%s", " ".join(cmd), SCRAPY_PROJECT_DIR
+        )
 
         result = subprocess.run(
             cmd,
@@ -165,13 +223,20 @@ def _run_spider_process(spider_name: str, max_results: int, task_id: str):
             combined_output = f"{result.stdout or ''}\n{result.stderr or ''}"
             _running_tasks[task_id]["items_count"] = counts["total_items"]
             _running_tasks[task_id]["new_items_count"] = counts["new_items"]
-            _running_tasks[task_id]["log_tail"] = stdout_tail or "Spider finished with no stdout"
+            _running_tasks[task_id]["log_tail"] = (
+                stdout_tail or "Spider finished with no stdout"
+            )
             if counts["total_items"] == 0 and (
-                "Request failed" in combined_output or "yielded no entries" in combined_output
+                "Request failed" in combined_output
+                or "yielded no entries" in combined_output
             ):
                 _running_tasks[task_id]["status"] = "failed"
-                _running_tasks[task_id]["error"] = "Spider finished without extracting articles; check request/parsing logs."
-                logger.error("Spider completed with zero extracted items: %s", spider_name)
+                _running_tasks[task_id]["error"] = (
+                    "Spider finished without extracting articles; check request/parsing logs."
+                )
+                logger.error(
+                    "Spider completed with zero extracted items: %s", spider_name
+                )
             else:
                 _running_tasks[task_id]["status"] = "completed"
                 logger.info("Spider completed: %s", spider_name)
@@ -181,7 +246,12 @@ def _run_spider_process(spider_name: str, max_results: int, task_id: str):
                 f"Spider exit code {result.returncode}. "
                 f"STDERR: {stderr_tail or '<empty>'} | STDOUT: {stdout_tail or '<empty>'}"
             )
-            logger.error("Spider failed: %s | rc=%s | stderr=%s", spider_name, result.returncode, stderr_tail)
+            logger.error(
+                "Spider failed: %s | rc=%s | stderr=%s",
+                spider_name,
+                result.returncode,
+                stderr_tail,
+            )
     except subprocess.TimeoutExpired:
         _running_tasks[task_id]["status"] = "failed"
         _running_tasks[task_id]["error"] = "Spider timed out after 300s"
@@ -195,6 +265,7 @@ def _run_spider_process(spider_name: str, max_results: int, task_id: str):
 
 
 # --------------- Endpoints ---------------
+
 
 @router.get("/spiders", response_model=list[SpiderInfo])
 async def list_spiders():
@@ -216,7 +287,8 @@ async def trigger_crawl(req: CrawlRequest):
         raise HTTPException(400, f"Unknown spider: {req.spider}")
 
     running = [
-        t for t in _running_tasks.values()
+        t
+        for t in _running_tasks.values()
         if t["spider"] == req.spider and t["status"] == "running"
     ]
     if running:
@@ -307,24 +379,26 @@ async def list_articles(
     total = len(index)
 
     start = (page - 1) * page_size
-    page_items = index[start:start + page_size]
+    page_items = index[start : start + page_size]
 
     articles = []
     for entry in page_items:
         full = _load_article(entry["id"], entry.get("source", "unknown"))
-        articles.append(ArticleResponse(
-            id=entry["id"],
-            title=entry.get("title", ""),
-            source=entry.get("source", ""),
-            url=entry.get("url", ""),
-            published_at=entry.get("published_at", ""),
-            crawled_at=entry.get("crawled_at", ""),
-            category=entry.get("category", ""),
-            status=entry.get("status", "raw"),
-            summary=(full.get("summary", "") if full else "")[:300],
-            tags=full.get("tags", []) if full else [],
-            authors=full.get("authors", []) if full else [],
-        ))
+        articles.append(
+            ArticleResponse(
+                id=entry["id"],
+                title=entry.get("title", ""),
+                source=entry.get("source", ""),
+                url=entry.get("url", ""),
+                published_at=entry.get("published_at", ""),
+                crawled_at=entry.get("crawled_at", ""),
+                category=entry.get("category", ""),
+                status=entry.get("status", "raw"),
+                summary=(full.get("summary", "") if full else "")[:300],
+                tags=full.get("tags", []) if full else [],
+                authors=full.get("authors", []) if full else [],
+            )
+        )
 
     return ArticlesPageResponse(
         articles=articles, total=total, page=page, page_size=page_size
@@ -383,7 +457,13 @@ async def trigger_ingest(req: IngestRequest):
     for article in articles:
         text = format_article_for_rag(article)
         if len(text.strip()) >= 50:
-            texts.append({"id": article.get("id", ""), "text": text, "title": article.get("title", "")})
+            texts.append(
+                {
+                    "id": article.get("id", ""),
+                    "text": text,
+                    "title": article.get("title", ""),
+                }
+            )
 
     return {
         "status": "ready",
@@ -399,18 +479,18 @@ async def import_batch_articles(article_ids: list[str] = Body(...)):
     for article_id in article_ids:
         result = await import_single_article(article_id)
         results.append(result)
-    
+
     success_count = sum(1 for r in results if r["status"] == "success")
     failed_count = sum(1 for r in results if r["status"] == "failed")
     skipped_count = sum(1 for r in results if r["status"] == "skipped")
-    
+
     return {
         "status": "completed",
         "total": len(article_ids),
         "success": success_count,
         "failed": failed_count,
         "skipped": skipped_count,
-        "results": results
+        "results": results,
     }
 
 
@@ -419,26 +499,34 @@ async def import_single_article(article_id: str):
     """导入单篇文章到 LightRAG"""
     import requests
     from crawler.ingest import format_article_for_rag
-    
+
     # Load article
     index = _load_index()
     entry = next((a for a in index if a["id"] == article_id), None)
     if not entry:
         raise HTTPException(404, "Article not found")
-    
+
     article = _load_article(article_id, entry.get("source", "unknown"))
     if not article:
         raise HTTPException(404, "Article file not found")
-    
+
     # Check if already imported
     if entry.get("status") == "ingested":
-        return {"status": "skipped", "message": "Article already imported", "article_id": article_id}
-    
+        return {
+            "status": "skipped",
+            "message": "Article already imported",
+            "article_id": article_id,
+        }
+
     # Format and import
     text = format_article_for_rag(article)
     if len(text.strip()) < 50:
-        return {"status": "skipped", "message": "Article content too short", "article_id": article_id}
-    
+        return {
+            "status": "skipped",
+            "message": "Article content too short",
+            "article_id": article_id,
+        }
+
     try:
         # Call LightRAG API
         api_url = os.getenv("LIGHTRAG_API_URL", "http://localhost:9622")
@@ -446,27 +534,27 @@ async def import_single_article(article_id: str):
         headers = {"Content-Type": "application/json"}
         if token:
             headers["Authorization"] = f"Bearer {token}"
-        
+
         resp = requests.post(
             f"{api_url}/documents/text",
             json={"text": text},
             headers=headers,
             timeout=300,
         )
-        
+
         if resp.status_code in (200, 201):
             _update_article_status(article_id, "ingested")
             return {
                 "status": "success",
                 "message": "Article imported successfully",
                 "article_id": article_id,
-                "title": article.get("title", "")[:100]
+                "title": article.get("title", "")[:100],
             }
         else:
             return {
                 "status": "failed",
                 "message": f"LightRAG API error: {resp.status_code}",
-                "article_id": article_id
+                "article_id": article_id,
             }
     except Exception as e:
         logger.error(f"Import failed for {article_id}: {e}")
@@ -478,16 +566,16 @@ def _update_article_status(article_id: str, status: str):
     index_file = ARTICLES_DIR / "index.json"
     if not index_file.exists():
         return
-    
+
     try:
         with open(index_file, "r", encoding="utf-8") as f:
             index = json.load(f)
-        
+
         for entry in index:
             if entry["id"] == article_id:
                 entry["status"] = status
                 break
-        
+
         with open(index_file, "w", encoding="utf-8") as f:
             json.dump(index, f, ensure_ascii=False, indent=2)
     except Exception as e:

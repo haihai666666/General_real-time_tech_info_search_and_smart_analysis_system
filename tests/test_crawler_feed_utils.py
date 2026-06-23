@@ -54,7 +54,9 @@ class FeedUtilsTests(unittest.TestCase):
 
         self.assertEqual(len(entries), 1)
         self.assertEqual(entries[0]["title"], "虎嗅标题")
-        self.assertEqual(entries[0]["link"], "https://www.huxiu.com/article/1.html?f=rss")
+        self.assertEqual(
+            entries[0]["link"], "https://www.huxiu.com/article/1.html?f=rss"
+        )
         self.assertEqual(entries[0]["content"], "<p>虎嗅正文</p>")
         self.assertEqual(entries[0]["published_at"], "Sun, 31 May 2026 12:00:00 GMT")
         self.assertEqual(entries[0]["tags"], ["科技"])

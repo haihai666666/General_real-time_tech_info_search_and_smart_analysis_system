@@ -1,8 +1,6 @@
 """InfoQ 中文技术资讯爬虫 - 通过 RSS 获取最新软件开发/架构资讯"""
 
 import logging
-from datetime import datetime, timezone
-from urllib.parse import urljoin
 
 import scrapy
 
@@ -27,11 +25,13 @@ class InfoqSpider(BaseTechSpider):
     def start_requests(self):
         # InfoQ 中文 RSS feed
         rss_url = "https://www.infoq.cn/feed"
-        yield scrapy.Request(rss_url, callback=self.parse_rss, errback=self.errback_handler)
+        yield scrapy.Request(
+            rss_url, callback=self.parse_rss, errback=self.errback_handler
+        )
 
     def parse_rss(self, response):
         """解析 RSS feed"""
-        items = response.xpath("//item")[:self.max_results]
+        items = response.xpath("//item")[: self.max_results]
         logger.info("InfoQ CN: found %d items", len(items))
 
         for item in items:
@@ -39,10 +39,10 @@ class InfoqSpider(BaseTechSpider):
             link = item.xpath("link/text()").get("").strip()
             description = item.xpath("description/text()").get("").strip()
             pub_date = item.xpath("pubDate/text()").get("")
-            
+
             # 提取分类
             categories = item.xpath("category/text()").getall()
-            
+
             # 提取作者
             creator = item.xpath("*[local-name()='creator']/text()").get("")
             authors = [creator] if creator else []

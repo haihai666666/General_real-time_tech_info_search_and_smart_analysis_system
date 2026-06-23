@@ -25,8 +25,18 @@ class WilliamlongSpider(BaseTechSpider):
         self._emitted = 0
 
     def start_requests(self):
-        yield scrapy.Request("https://www.williamlong.info/rss.xml", callback=self.parse_rss, errback=self.errback_handler, dont_filter=True)
-        yield scrapy.Request("https://www.williamlong.info/", callback=self.parse_homepage, errback=self.errback_handler, dont_filter=True)
+        yield scrapy.Request(
+            "https://www.williamlong.info/rss.xml",
+            callback=self.parse_rss,
+            errback=self.errback_handler,
+            dont_filter=True,
+        )
+        yield scrapy.Request(
+            "https://www.williamlong.info/",
+            callback=self.parse_homepage,
+            errback=self.errback_handler,
+            dont_filter=True,
+        )
 
     def parse_rss(self, response):
         items = response.xpath("//item")
@@ -55,17 +65,37 @@ class WilliamlongSpider(BaseTechSpider):
         for href in links:
             if self._emitted >= self.max_results:
                 break
-            if not href or not href.startswith("http") or "williamlong.info" not in href:
+            if (
+                not href
+                or not href.startswith("http")
+                or "williamlong.info" not in href
+            ):
                 continue
-            yield scrapy.Request(href, callback=self.parse_article, errback=self.errback_handler)
+            yield scrapy.Request(
+                href, callback=self.parse_article, errback=self.errback_handler
+            )
 
     def parse_article(self, response):
         if self._emitted >= self.max_results:
             return
-        title = response.css("h1::text, meta[property='og:title']::attr(content), title::text").get("").strip()
-        content = "\n".join(p.strip() for p in response.css("article p::text, .post-content p::text, p::text").getall() if p.strip())
+        title = (
+            response.css(
+                "h1::text, meta[property='og:title']::attr(content), title::text"
+            )
+            .get("")
+            .strip()
+        )
+        content = "\n".join(
+            p.strip()
+            for p in response.css(
+                "article p::text, .post-content p::text, p::text"
+            ).getall()
+            if p.strip()
+        )
         if len(content) < 40:
-            content = (response.css("meta[name='description']::attr(content)").get() or "").strip()
+            content = (
+                response.css("meta[name='description']::attr(content)").get() or ""
+            ).strip()
         if not title or len(content) < 20:
             return
         self._emitted += 1

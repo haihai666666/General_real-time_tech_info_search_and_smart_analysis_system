@@ -53,7 +53,9 @@ class TechCrunchSpider(BaseTechSpider):
 
     def parse_article(self, response):
         title = response.meta.get("title", "")
-        paragraphs = response.css("div.article-content p::text, div.entry-content p::text, article p::text").getall()
+        paragraphs = response.css(
+            "div.article-content p::text, div.entry-content p::text, article p::text"
+        ).getall()
         content = " ".join(p.strip() for p in paragraphs if p.strip())
 
         if not content:
@@ -65,9 +67,13 @@ class TechCrunchSpider(BaseTechSpider):
                 content=content,
                 summary=content[:500] if len(content) > 500 else content,
                 url=response.url,
-                published_at=response.meta.get("pub_date", datetime.now(timezone.utc).isoformat()),
+                published_at=response.meta.get(
+                    "pub_date", datetime.now(timezone.utc).isoformat()
+                ),
                 source="techcrunch",
                 category="tech_news",
-                authors=[response.meta["author"]] if response.meta.get("author") else [],
+                authors=[response.meta["author"]]
+                if response.meta.get("author")
+                else [],
                 tags=response.meta.get("categories", []),
             )

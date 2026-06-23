@@ -2933,7 +2933,9 @@ async def extract_entities(
     )
     sample_text = "\n".join(
         [
-            (chunk_data.get("content", "") if isinstance(chunk_data, dict) else "")[:500]
+            (chunk_data.get("content", "") if isinstance(chunk_data, dict) else "")[
+                :500
+            ]
             for _, chunk_data in ordered_chunks[:20]
         ]
     )
@@ -3570,23 +3572,24 @@ async def _get_vector_context(
             query, top_k=search_top_k, query_embedding=query_embedding
         )
 
-        import os, json
+        import os
+        import json
 
         bm25_chunks = []
         try:
             workspace_dir = chunks_vdb.global_config.get("working_dir", "")
             if hasattr(chunks_vdb, "workspace") and chunks_vdb.workspace:
                 workspace_dir = os.path.join(workspace_dir, chunks_vdb.workspace)
-            
+
             # The namespace for text_chunks is typically 'text_chunks'
             text_chunks_path = os.path.join(workspace_dir, "kv_store_text_chunks.json")
             if os.path.exists(text_chunks_path):
                 import jieba
                 from rank_bm25 import BM25Okapi
-                
+
                 with open(text_chunks_path, "r", encoding="utf-8") as f:
                     all_chunks = json.load(f)
-                    
+
                 corpus = []
                 chunk_ids = []
                 for k, v in all_chunks.items():
@@ -3594,26 +3597,32 @@ async def _get_vector_context(
                     if content:
                         corpus.append(list(jieba.cut(content)))
                         chunk_ids.append(k)
-                        
+
                 if corpus:
                     bm25 = BM25Okapi(corpus)
                     tokenized_query = list(jieba.cut(query))
                     doc_scores = bm25.get_scores(tokenized_query)
-                    
+
                     # Get top_k indices
-                    top_indices = sorted(range(len(doc_scores)), key=lambda i: doc_scores[i], reverse=True)[:search_top_k]
-                    
+                    top_indices = sorted(
+                        range(len(doc_scores)),
+                        key=lambda i: doc_scores[i],
+                        reverse=True,
+                    )[:search_top_k]
+
                     for idx in top_indices:
                         if doc_scores[idx] > 0:
                             chunk_id = chunk_ids[idx]
                             v = all_chunks[chunk_id]
-                            bm25_chunks.append({
-                                "id": chunk_id,
-                                "content": v.get("content", ""),
-                                "file_path": v.get("file_path", "unknown_source"),
-                                "created_at": v.get("created_at", None),
-                                "bm25_score": doc_scores[idx]
-                            })
+                            bm25_chunks.append(
+                                {
+                                    "id": chunk_id,
+                                    "content": v.get("content", ""),
+                                    "file_path": v.get("file_path", "unknown_source"),
+                                    "created_at": v.get("created_at", None),
+                                    "bm25_score": doc_scores[idx],
+                                }
+                            )
         except Exception as e:
             logger.warning(f"Failed to perform BM25 hybrid search: {e}")
 
@@ -3625,7 +3634,7 @@ async def _get_vector_context(
 
         valid_chunks = []
         seen_ids = set()
-        
+
         # Add vector chunks
         for result in results:
             if "content" in result:
@@ -3639,7 +3648,7 @@ async def _get_vector_context(
                     "chunk_id": chunk_id,
                 }
                 valid_chunks.append(chunk_with_metadata)
-                
+
         # Add BM25 chunks
         for result in bm25_chunks:
             chunk_id = result.get("id")

@@ -58,9 +58,15 @@ class GeekparkSpider(BaseTechSpider):
 
     def parse_feed(self, response):
         entries = extract_feed_entries(response.text)
-        logger.info("GeekPark feed: found %d entries from %s", len(entries), response.url)
+        logger.info(
+            "GeekPark feed: found %d entries from %s", len(entries), response.url
+        )
         if not entries:
-            logger.warning("GeekPark feed yielded no entries: %s (%d bytes)", response.url, len(response.body))
+            logger.warning(
+                "GeekPark feed yielded no entries: %s (%d bytes)",
+                response.url,
+                len(response.body),
+            )
             yield scrapy.Request(
                 "https://www.geekpark.net/",
                 callback=self.parse_list,
@@ -80,18 +86,26 @@ class GeekparkSpider(BaseTechSpider):
                 content=content,
                 summary=(entry["summary"] or content)[:300],
                 url=entry["link"],
-                published_at=entry["published_at"] or datetime.now(timezone.utc).isoformat(),
+                published_at=entry["published_at"]
+                or datetime.now(timezone.utc).isoformat(),
                 source="geekpark",
                 category="tech_insight",
                 language="zh",
-                tags=entry["tags"][:5] if entry["tags"] else ["geekpark", "tech_insight"],
+                tags=entry["tags"][:5]
+                if entry["tags"]
+                else ["geekpark", "tech_insight"],
                 extra={"source_mode": "rss"},
             )
 
     def parse_list(self, response):
         seen = set()
         hrefs = response.css("a::attr(href)").getall()
-        hrefs.extend(re.findall(r"""["']((?:https?://www\.geekpark\.net)?/news/\d+)["']""", response.text))
+        hrefs.extend(
+            re.findall(
+                r"""["']((?:https?://www\.geekpark\.net)?/news/\d+)["']""",
+                response.text,
+            )
+        )
         logger.info("GeekPark homepage: found %d candidate links", len(hrefs))
 
         for href in hrefs:
@@ -116,10 +130,15 @@ class GeekparkSpider(BaseTechSpider):
             or response.css("meta[property='og:title']::attr(content)").get()
             or response.css("title::text").get("")
         ).strip()
-        paragraphs = response.css("article p::text, .article-content p::text, .post-content p::text, p::text").getall()
+        paragraphs = response.css(
+            "article p::text, .article-content p::text, .post-content p::text, p::text"
+        ).getall()
         content = "\n".join(p.strip() for p in paragraphs if p and p.strip())
         if len(content) < 30:
-            content = (response.css("meta[property='og:description']::attr(content)").get() or "").strip()
+            content = (
+                response.css("meta[property='og:description']::attr(content)").get()
+                or ""
+            ).strip()
         if not title or not content:
             logger.debug("GeekPark skip weak page: %s", response.url)
             return

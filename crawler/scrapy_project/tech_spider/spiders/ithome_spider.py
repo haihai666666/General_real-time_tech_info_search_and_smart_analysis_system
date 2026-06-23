@@ -59,7 +59,8 @@ class IthomeSpider(BaseTechSpider):
                 content=content,
                 summary=(entry["summary"] or content)[:300],
                 url=entry["link"],
-                published_at=entry["published_at"] or datetime.now(timezone.utc).isoformat(),
+                published_at=entry["published_at"]
+                or datetime.now(timezone.utc).isoformat(),
                 source="ithome",
                 category="tech_news_cn",
                 language="zh",
@@ -78,7 +79,9 @@ class IthomeSpider(BaseTechSpider):
             if not is_ithome_article_url(full) or full in seen:
                 continue
             seen.add(full)
-            yield scrapy.Request(full, callback=self.parse_article, errback=self.errback_handler)
+            yield scrapy.Request(
+                full, callback=self.parse_article, errback=self.errback_handler
+            )
 
     def parse_article(self, response):
         if self._emitted >= self.max_results:
@@ -88,10 +91,15 @@ class IthomeSpider(BaseTechSpider):
             or response.css("meta[property='og:title']::attr(content)").get()
             or response.css("title::text").get("")
         ).strip()
-        paragraphs = response.css("article p::text, .article p::text, .content p::text, p::text").getall()
+        paragraphs = response.css(
+            "article p::text, .article p::text, .content p::text, p::text"
+        ).getall()
         content = "\n".join(p.strip() for p in paragraphs if p and p.strip())
         if len(content) < 40:
-            content = (response.css("meta[property='og:description']::attr(content)").get() or "").strip()
+            content = (
+                response.css("meta[property='og:description']::attr(content)").get()
+                or ""
+            ).strip()
         if not title or len(content) < 20:
             logger.debug("ITHome skip weak page: %s", response.url)
             return

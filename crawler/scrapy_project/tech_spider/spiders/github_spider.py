@@ -41,9 +41,18 @@ class GithubTrendingSpider(BaseTechSpider):
             repo_link = row.css("h2 a::attr(href)").get("")
             repo_name = repo_link.strip("/") if repo_link else ""
             description = row.css("p.col-9::text").get("").strip()
-            prog_lang = row.css("span[itemprop='programmingLanguage']::text").get("").strip()
-            stars_today = row.css("span.d-inline-block.float-sm-right::text").get("").strip()
-            total_stars = row.css("a.Link--muted:first-of-type::text").get("").strip().replace(",", "")
+            prog_lang = (
+                row.css("span[itemprop='programmingLanguage']::text").get("").strip()
+            )
+            stars_today = (
+                row.css("span.d-inline-block.float-sm-right::text").get("").strip()
+            )
+            total_stars = (
+                row.css("a.Link--muted:first-of-type::text")
+                .get("")
+                .strip()
+                .replace(",", "")
+            )
 
             if not repo_name:
                 continue
@@ -71,5 +80,9 @@ class GithubTrendingSpider(BaseTechSpider):
                 source="github",
                 category="open-source",
                 tags=tags,
-                extra={"stars": total_stars, "stars_today": stars_today.strip(), "prog_language": prog_lang},
+                extra={
+                    "stars": total_stars,
+                    "stars_today": stars_today.strip(),
+                    "prog_language": prog_lang,
+                },
             )

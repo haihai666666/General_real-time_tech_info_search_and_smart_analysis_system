@@ -1,10 +1,14 @@
 """Test crawler trigger via API"""
+
 import requests
 import time
 
 # Trigger crawl
 print("Triggering arxiv crawler...")
-resp = requests.post("http://localhost:8000/api/crawler/crawl", json={"spider": "arxiv", "max_results": 10})
+resp = requests.post(
+    "http://localhost:8000/api/crawler/crawl",
+    json={"spider": "arxiv", "max_results": 10},
+)
 print(f"Response: {resp.status_code}")
 print(resp.json())
 

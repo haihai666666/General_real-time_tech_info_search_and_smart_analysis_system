@@ -30,14 +30,28 @@ class HuxiuSpider(BaseTechSpider):
 
     def start_requests(self):
         for url in self.FEED_URLS:
-            yield scrapy.Request(url, callback=self.parse_feed, errback=self.errback_handler, dont_filter=True)
-        yield scrapy.Request("https://www.huxiu.com/", callback=self.parse_list, errback=self.errback_handler, dont_filter=True)
+            yield scrapy.Request(
+                url,
+                callback=self.parse_feed,
+                errback=self.errback_handler,
+                dont_filter=True,
+            )
+        yield scrapy.Request(
+            "https://www.huxiu.com/",
+            callback=self.parse_list,
+            errback=self.errback_handler,
+            dont_filter=True,
+        )
 
     def parse_feed(self, response):
         entries = extract_feed_entries(response.text)
         logger.info("Huxiu RSS: found %d entries from %s", len(entries), response.url)
         if not entries:
-            logger.warning("Huxiu RSS yielded no entries: %s (%d bytes)", response.url, len(response.body))
+            logger.warning(
+                "Huxiu RSS yielded no entries: %s (%d bytes)",
+                response.url,
+                len(response.body),
+            )
 
         for entry in entries:
             if self._emitted >= self.max_results:
@@ -49,7 +63,8 @@ class HuxiuSpider(BaseTechSpider):
                 content=content,
                 summary=(entry["summary"] or content)[:300],
                 url=entry["link"],
-                published_at=entry["published_at"] or datetime.now(timezone.utc).isoformat(),
+                published_at=entry["published_at"]
+                or datetime.now(timezone.utc).isoformat(),
                 source="huxiu",
                 category="tech_business",
                 language="zh",
@@ -71,7 +86,9 @@ class HuxiuSpider(BaseTechSpider):
             if full in seen:
                 continue
             seen.add(full)
-            yield scrapy.Request(full, callback=self.parse_article, errback=self.errback_handler)
+            yield scrapy.Request(
+                full, callback=self.parse_article, errback=self.errback_handler
+            )
 
     def parse_article(self, response):
         if self._emitted >= self.max_results:
@@ -81,10 +98,15 @@ class HuxiuSpider(BaseTechSpider):
             or response.css("meta[property='og:title']::attr(content)").get()
             or response.css("title::text").get("")
         ).strip()
-        paragraphs = response.css("article p::text, .article-content p::text, .article-wrap p::text, p::text").getall()
+        paragraphs = response.css(
+            "article p::text, .article-content p::text, .article-wrap p::text, p::text"
+        ).getall()
         content = "\n".join(p.strip() for p in paragraphs if p and p.strip())
         if len(content) < 30:
-            content = (response.css("meta[property='og:description']::attr(content)").get() or "").strip()
+            content = (
+                response.css("meta[property='og:description']::attr(content)").get()
+                or ""
+            ).strip()
         if not title or not content:
             logger.debug("Huxiu skip weak page: %s", response.url)
             return

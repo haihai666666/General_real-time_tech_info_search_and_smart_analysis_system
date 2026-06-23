@@ -28,9 +28,13 @@ class CrawlerUrlAndStatusUtilsTests(unittest.TestCase):
     def test_extracts_scrapy_finish_counts(self):
         from crawler.crawl_status_utils import extract_spider_counts
 
-        stderr = "2026 [tech_spider.pipelines] INFO: Spider ithome finished: 40 total, 3 new"
+        stderr = (
+            "2026 [tech_spider.pipelines] INFO: Spider ithome finished: 40 total, 3 new"
+        )
 
-        self.assertEqual(extract_spider_counts("", stderr), {"total_items": 40, "new_items": 3})
+        self.assertEqual(
+            extract_spider_counts("", stderr), {"total_items": 40, "new_items": 3}
+        )
 
 
 if __name__ == "__main__":

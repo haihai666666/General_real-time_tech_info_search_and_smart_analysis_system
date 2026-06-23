@@ -11,7 +11,7 @@ import json
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
@@ -63,7 +63,11 @@ async def api_summarize(req: SummarizeRequest):
 
     try:
         summary = await summarize_article(article)
-        return {"article_id": req.article_id, "title": article.get("title", ""), "summary": summary}
+        return {
+            "article_id": req.article_id,
+            "title": article.get("title", ""),
+            "summary": summary,
+        }
     except ValueError as e:
         raise HTTPException(503, str(e))
     except Exception as e:
@@ -79,7 +83,7 @@ async def api_trends(req: TrendRequest):
         index = [a for a in index if a.get("source") == req.source]
 
     index.sort(key=lambda x: x.get("crawled_at", ""), reverse=True)
-    entries = index[:req.limit]
+    entries = index[: req.limit]
 
     articles = []
     for entry in entries:
@@ -115,10 +119,15 @@ async def api_qa(req: QARequest):
         if article:
             articles.append(article)
 
-    history = [{"role": m.role, "content": m.content} for m in req.history] if req.history else None
+    history = (
+        [{"role": m.role, "content": m.content} for m in req.history]
+        if req.history
+        else None
+    )
 
     try:
         if req.stream:
+
             async def stream_generator():
                 gen = await qa_stream(req.question, articles, history)
                 async for chunk in gen:
@@ -130,7 +139,11 @@ async def api_qa(req: QARequest):
             )
         else:
             answer = await qa_with_context(req.question, articles, history)
-            return {"question": req.question, "answer": answer, "sources_count": len(articles)}
+            return {
+                "question": req.question,
+                "answer": answer,
+                "sources_count": len(articles),
+            }
     except ValueError as e:
         raise HTTPException(503, str(e))
     except Exception as e:

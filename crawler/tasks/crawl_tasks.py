@@ -10,7 +10,9 @@ from crawler.tasks.celery_app import app
 
 logger = logging.getLogger(__name__)
 
-SCRAPY_PROJECT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "scrapy_project")
+SCRAPY_PROJECT_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(__file__)), "scrapy_project"
+)
 
 
 @app.task(bind=True, max_retries=2, default_retry_delay=300)
@@ -43,8 +45,15 @@ def run_spider(self, spider_name: str, extra_args: dict | None = None):
                 "stdout_tail": result.stdout[-500:] if result.stdout else "",
             }
         else:
-            logger.error("Spider %s failed (code=%d): %s", spider_name, result.returncode, result.stderr[-500:])
-            raise Exception(f"Spider {spider_name} exited with code {result.returncode}")
+            logger.error(
+                "Spider %s failed (code=%d): %s",
+                spider_name,
+                result.returncode,
+                result.stderr[-500:],
+            )
+            raise Exception(
+                f"Spider {spider_name} exited with code {result.returncode}"
+            )
 
     except subprocess.TimeoutExpired:
         logger.error("Spider %s timed out after 30min", spider_name)
